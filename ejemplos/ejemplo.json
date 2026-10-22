@@ -1,0 +1,77 @@
+{
+  "application": "MOPT-DPA-301",
+  "backupVersion": 1,
+  "inventory": {
+    "schemaVersion": 1,
+    "id": "c448ac4f-6a6a-4b09-b978-4ffd63926c2a",
+    "number": "EJEMPLO-001",
+    "macroRegion": "V",
+    "surface": "2",
+    "road": {
+      "id": "N:RVN_0524:40080:710",
+      "type": "N",
+      "code": "4-0080-00",
+      "section": "40080",
+      "route": "126",
+      "lengthKm": 4.98,
+      "from": "Barva (Quebrada Seca)(Lte Cantonal)",
+      "to": "Birrí (Río Porrosatí)(Lte Cantonal)",
+      "description": "Barva (Quebrada Seca)(Lte Cantonal)-Birrí (Río Porrosatí)(Lte Cantonal)",
+      "provinceCode": "4",
+      "provinceName": "Heredia",
+      "cantonCode": "02",
+      "cantonName": "Barva",
+      "network": "Ruta nacional",
+      "needsReview": false,
+      "source": {
+        "file": "Red Vial Nacional 2024(1).xlsx",
+        "sheet": "RVN_0524",
+        "row": 710
+      },
+      "codeSource": "red nacional heredia(1).rtf",
+      "mode": "catalog"
+    },
+    "sheets": [
+      {
+        "id": "9cae52c9-1274-4465-9ba2-2c0db519291b",
+        "stations": [
+          {
+            "id": "ejemplo-0,0",
+            "station": "0,0",
+            "diameter": "",
+            "culvertLength": "",
+            "headwallNumber": "",
+            "headwallType": "",
+            "observations": "Inicio del recorrido"
+          },
+          {
+            "id": "ejemplo-4,9",
+            "station": "4,9",
+            "diameter": "0,80",
+            "culvertLength": "6,50",
+            "headwallNumber": "2",
+            "headwallType": "Toma",
+            "observations": "Huecos 2x2 (6)"
+          },
+          {
+            "id": "ejemplo-12,678",
+            "station": "12,678",
+            "diameter": "1.25",
+            "culvertLength": "8.5",
+            "headwallNumber": "",
+            "headwallType": "",
+            "observations": "Alcantarilla con sedimentos"
+          }
+        ],
+        "graphics": {
+          "activeMode": "free",
+          "free": [],
+          "station": []
+        }
+      }
+    ],
+    "activeSheetId": "9cae52c9-1274-4465-9ba2-2c0db519291b",
+    "createdAt": "2026-10-21T19:01:19.286Z",
+    "updatedAt": "2026-10-21T19:01:19.286Z"
+  }
+}

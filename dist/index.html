@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="es-CR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173f6b">
+  <meta name="description" content="Inventario de Necesidades del Camino: encabezado y estaciones DPA-301, con vista previa y descarga en Excel y PDF.">
+  <title>Inventario del Camino · MOPT</title>
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <!-- Símbolos propios de la interfaz; no sustituyen la identidad oficial del MOPT. -->
+  <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="i-road" viewBox="0 0 24 24"><path d="m7 3-4 18m14-18 4 18M12 3v4m0 3v4m0 3v4"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H5v18h14V8zM14 3v6h5M8 13h8m-8 4h6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M4 3h13l3 3v15H4zM8 3v6h8V3M8 21v-8h8v8"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 15v6h16v-6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5m0 3v.2"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7"/></symbol>
+  </defs></svg>
+  <a class="skip-link" href="#main">Ir al formulario</a>
+  <header class="app-header"><a class="brand" href="./"><span class="brand-mark">M</span><span>MOPT<small>Inventario del camino</small></span></a><nav aria-label="Ayuda y catálogo"><button id="nav-catalog" class="header-link">Catálogo de caminos</button><button id="nav-help" class="header-link">Cómo llenar</button></nav></header>
+
+  <div class="workspace">
+    <header class="topbar"><div class="breadcrumb"><span class="mobile-brand">MOPT / </span>SIGVI<span>/</span><strong>Inventario de necesidades</strong></div><div class="topbar-state"><span id="connection" class="connection"><span class="status-dot"></span>Preparando aplicación</span><span class="divider"></span><span id="save-status" role="status">Sin cambios</span></div></header>
+    <main id="main" tabindex="-1">
+      <div class="page-heading"><div><p class="eyebrow">DPA-301 · REGIÓN V</p><h1>Inventario de necesidades del camino</h1><p>Completá los datos y revisá el documento antes de descargarlo.</p></div><button class="button secondary new-button" id="new-inventory"><svg class="icon"><use href="#i-plus"/></svg>Nuevo inventario</button></div>
+      <!-- La vista previa y las descargas usan la plantilla oficial. -->
+      <section class="document-toolbar" aria-label="Documento y descargas"><div><strong id="export-sheet-label">Hoja 1 de 1</strong><span>Frente y reverso de la hoja seleccionada</span><span id="export-graphic-label">Caso 1 · Editor completo</span></div><div class="document-actions"><button class="button secondary" id="open-preview"><svg class="icon"><use href="#i-eye"/></svg>Vista previa</button><button class="button excel" id="download-excel" data-export="excel"><svg class="icon"><use href="#i-download"/></svg>Descargar Excel</button><button class="button primary" id="download-pdf" data-export="pdf"><svg class="icon"><use href="#i-download"/></svg>Descargar PDF</button></div></section>
+      <p id="document-status" class="document-status" role="status">Preparando la plantilla original…</p>
+      <div id="boot-error" class="message error" hidden role="alert"></div>
+      <noscript><div class="message error">Activá JavaScript para completar el inventario.</div></noscript>
+      <div class="editor-tabs" role="tablist" aria-label="Secciones del inventario">
+        <button id="tab-header" role="tab" type="button" aria-selected="true" aria-controls="panel-header" data-editor-tab="header">Encabezado</button>
+        <button id="tab-stations" role="tab" type="button" aria-selected="false" aria-controls="panel-stations" tabindex="-1" data-editor-tab="stations">Estaciones y detalles</button>
+        <button id="tab-graphics" role="tab" type="button" aria-selected="false" aria-controls="panel-graphics" tabindex="-1" data-editor-tab="graphics">Representación gráfica</button>
+        <button id="tab-sketch" role="tab" type="button" aria-selected="false" aria-controls="panel-sketch" tabindex="-1" data-editor-tab="sketch">Parte trasera · Croquis</button>
+      </div>
+      <div class="editor-grid" id="editor" aria-busy="true">
+        <div class="form-column">
+          <section id="panel-header" role="tabpanel" aria-labelledby="tab-header">
+          <section class="card" aria-labelledby="ident-title"><div class="card-heading"><div class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-doc"/></svg></span><div><h2 id="ident-title">Identificación del inventario</h2><p>Datos generales de la hoja DPA-301.</p></div></div><span id="current-sheet" class="soft-badge">Hoja 1 de 1</span></div>
+            <div class="card-body identification-grid"><div class="field"><label for="inventory-number">NÚMERO <span class="optional">Opcional</span></label><input id="inventory-number" maxlength="60" placeholder="Sin asignar" autocomplete="off"><p class="field-hint">Pendiente de definir el criterio de numeración.</p></div><div class="field"><label for="macro-region">(MACRO) REGIÓN</label><div class="locked-value"><input id="macro-region" value="V" readonly><span>Región fija</span></div><p class="field-hint">Se mantiene en todas las hojas.</p></div></div>
+          </section>
+
+          <section class="card" aria-labelledby="road-title"><div class="card-heading"><div class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-road"/></svg></span><div><h2 id="road-title">Camino y descripción</h2><p>Buscá por código, ruta o nombre del tramo.</p></div></div><span class="soft-badge subtle">CATÁLOGO 2024</span></div>
+            <div class="card-body">
+              <button id="road-picker" class="road-picker"><span class="picker-symbol"><svg class="icon"><use href="#i-search"/></svg></span><span class="picker-text"><strong id="picker-title">Seleccionar un camino</strong><small id="picker-caption">109 secciones de Heredia y red nacional disponible</small></span><svg class="icon"><use href="#i-arrow"/></svg></button>
+              <div class="picker-under"><span id="road-mode-note">Los datos se completan al elegir un camino.</span><button class="text-button" id="manual-road">Agregar manualmente</button></div>
+              <div id="road-description" class="description-source" hidden></div>
+              <div id="road-alert" class="message notice" hidden></div>
+              <div class="fields-grid road-fields">
+                <div class="field"><label for="road-type">N/C (A)</label><select id="road-type" disabled><option value="">—</option><option value="N">N · Nacional</option><option value="C">C · Cantonal</option></select></div>
+                <div class="field span-2"><label for="road-code">CÓDIGO DEL CAMINO</label><input id="road-code" maxlength="60" placeholder="Ej. 4-0000-00" readonly></div>
+                <div class="field"><label for="road-route">RUTA</label><input id="road-route" maxlength="40" placeholder="—" readonly></div>
+                <div class="field span-2"><label for="road-from">DE <span class="auto-label">Inicio</span></label><textarea id="road-from" rows="2" maxlength="1000" placeholder="Punto de inicio del tramo" disabled></textarea></div>
+                <div class="field span-2"><label for="road-to">A <span class="auto-label">Final</span></label><textarea id="road-to" rows="2" maxlength="1000" placeholder="Punto final del tramo" disabled></textarea></div>
+                <div class="field span-2"><label for="road-length">LONGITUD <span class="auto-label">KM</span></label><div class="input-unit"><input id="road-length" inputmode="decimal" maxlength="40" placeholder="0,000" readonly><span>km</span></div><p class="field-hint" id="length-hint">Longitud de la sección seleccionada.</p></div>
+                <div class="field span-2"><label for="road-section">SECCIÓN DE CONTROL</label><input id="road-section" readonly placeholder="—"><p class="field-hint">Referencia del catálogo de caminos.</p></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="geo-title"><div class="card-heading"><div class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-pin"/></svg></span><div><h2 id="geo-title">Ubicación y superficie</h2><p>Provincia, cantón y condición actual del camino.</p></div></div></div>
+            <div class="card-body"><div class="geo-grid"><div class="field"><label for="road-province">PROVINCIA</label><select id="road-province" disabled><option value="">Sin seleccionar</option></select><p class="field-hint">Código: <strong id="province-code">—</strong></p></div><div class="field"><label for="road-canton">CANTÓN</label><select id="road-canton" disabled><option value="">Sin seleccionar</option></select><p class="field-hint">Código: <strong id="canton-code">—</strong></p></div></div>
+              <div class="field surface-field"><label for="surface">TIPO DE SUPERFICIE ACTUAL (B)</label><select id="surface"><option value="">Seleccionar superficie actual</option><option value="1">1 · Asfalto</option><option value="2">2 · Concreto</option><option value="3">3 · Tratamiento superficial</option><option value="4">4 · Lastre o grava</option><option value="5">5 · Tierra</option></select><p class="field-hint">Elegí la superficie observada. Los códigos corresponden a la plantilla DPA-301.</p></div>
+            </div>
+          </section>
+          <div id="validation-box" class="message validation" hidden role="alert"></div>
+          <div class="form-actions"><span><svg class="icon"><use href="#i-save"/></svg>Guardado automático en este dispositivo</span><button class="button primary" id="verify-header">Verificar encabezado<svg class="icon"><use href="#i-check"/></svg></button></div>
+          </section>
+          <section id="panel-stations" role="tabpanel" aria-labelledby="tab-stations" hidden>
+            <section class="card" aria-labelledby="stations-title">
+              <div class="card-heading"><div class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-pin"/></svg></span><div><h2 id="stations-title">Estaciones y detalles</h2><p>Los datos se colocan de abajo hacia arriba en todas las columnas.</p></div></div><span class="soft-badge" id="station-sheet">Hoja 1 de 1</span></div>
+              <div class="card-body">
+                <div class="station-form-heading"><h3 id="station-form-title">Nueva estación</h3><span class="count-badge" id="station-count">0 de 26</span></div>
+                <p class="station-order-note" id="station-order-note">La primera estación ocupará el renglón inferior de la tabla.</p>
+                <form id="station-form" novalidate>
+                  <div class="field station-position"><label for="station-km">ESTACIÓN KM + MTS</label><div class="station-position-grid"><div class="input-unit"><input id="station-km" name="station" inputmode="decimal" maxlength="24" placeholder="Ej. 12,678" autocomplete="off" aria-describedby="station-km-hint"><span>km</span></div><output id="station-format" for="station-km" aria-live="polite">0 + 000</output></div><p class="field-hint" id="station-km-hint">Ingresá kilómetros con coma o punto. Ejemplos: 0,0 → 0 + 000; 12,678 → 12 + 678.</p></div>
+                  <div class="station-groups">
+                    <fieldset><legend>Alcantarillas <span>Opcional</span></legend><div class="station-pair">
+                      <div class="field"><label for="station-diameter">DIÁMETRO</label><div class="input-unit"><input id="station-diameter" name="diameter" inputmode="decimal" maxlength="40" placeholder="Ej. 0,80" autocomplete="off"><span>m</span></div></div>
+                      <div class="field"><label for="station-length">LONGITUD</label><div class="input-unit"><input id="station-length" name="culvertLength" inputmode="decimal" maxlength="40" placeholder="Ej. 6,5" autocomplete="off"><span>m</span></div></div>
+                    </div></fieldset>
+                    <fieldset><legend>Cabezales tomas <span>Opcional</span></legend><div class="station-pair">
+                      <div class="field"><label for="station-number">NÚMERO</label><input id="station-number" name="headwallNumber" inputmode="numeric" pattern="[0-9]*" maxlength="15" placeholder="Ej. 2" autocomplete="off"></div>
+                      <div class="field"><label for="station-type">TIPO</label><input id="station-type" name="headwallType" maxlength="1000" placeholder="Texto libre" autocomplete="off"></div>
+                    </div></fieldset>
+                  </div>
+                  <div class="field station-observation-field"><label for="station-observations">OBSERVACIONES POR ESTACIÓN <span class="optional">Opcional</span></label><textarea id="station-observations" name="observations" rows="2" maxlength="1000" placeholder="Ej. Huecos 2x2 (6)"></textarea><p class="field-hint">Describí lo encontrado en esta estación. Se conserva el espacio original del documento.</p></div>
+                  <p id="station-error" class="message error" role="alert" hidden></p>
+                  <div class="station-form-actions"><span class="field-hint">Agregá la estación para guardarla.</span><button id="station-cancel" class="button secondary" type="button" hidden>Cancelar edición</button><button id="station-save" class="button primary" type="submit">Agregar estación</button></div>
+                </form>
+                <button id="station-next-sheet" class="button secondary" type="button" hidden>Agregar hoja y continuar</button>
+              </div>
+            </section>
+            <section class="card" aria-labelledby="station-list-title"><div class="card-heading"><div><h2 id="station-list-title">Estaciones guardadas</h2><p>El mismo orden que verás en el documento: la primera queda abajo.</p></div></div>
+              <div class="station-empty" id="station-empty"><svg class="icon"><use href="#i-pin"/></svg><strong>Todavía no hay estaciones en esta hoja</strong><p>Agregá la primera con el formulario.</p></div>
+              <div class="station-table-wrap" id="station-table-wrap" tabindex="0" role="region" aria-label="Estaciones guardadas de la hoja seleccionada" hidden><table class="station-table"><thead><tr><th scope="col">Estación</th><th scope="col">Diámetro</th><th scope="col">Longitud</th><th scope="col">Número</th><th scope="col">Tipo</th><th scope="col">Observaciones</th><th scope="col">Acciones</th></tr></thead><tbody id="station-list"></tbody></table></div>
+            </section>
+          </section>
+          <section id="panel-graphics" role="tabpanel" aria-labelledby="tab-graphics" hidden>
+            <section class="card" aria-labelledby="graphics-title">
+              <div class="card-heading"><div><h2 id="graphics-title">Representación gráfica</h2><p>Probá los dos casos. Cada uno conserva su propio dibujo por hoja.</p></div><span id="graphic-sheet" class="soft-badge">Hoja 1 de 1</span></div>
+              <div class="card-body graphics-body">
+                <div class="graphic-cases" role="group" aria-label="Caso de representación gráfica">
+                  <button id="graphic-case-free" type="button" aria-pressed="true"><strong>Caso 1 · Editor completo</strong><span>Ubicá los símbolos sobre la carretera completa.</span></button>
+                  <button id="graphic-case-station" type="button" aria-pressed="false"><strong>Caso 2 · Por estación</strong><span>Elegí símbolos junto al renglón de cada estación.</span></button>
+                </div>
+                <p class="graphic-export-note" id="graphic-export-case" role="status">Vista previa, Excel y PDF usarán: Caso 1 · Editor completo.</p>
+                <div class="graphic-toolbar"><div><strong id="graphic-selected" aria-live="polite">Seleccioná un símbolo para moverlo, girarlo o cambiar su tamaño.</strong><span id="graphic-count">0 símbolos</span></div><div class="graphic-tools" role="group" aria-label="Modificar símbolo seleccionado"><button id="graphic-smaller" class="button secondary" type="button" disabled>Reducir</button><button id="graphic-larger" class="button secondary" type="button" disabled>Agrandar</button><button id="graphic-duplicate" class="button secondary" type="button" disabled>Duplicar</button><button id="graphic-delete" class="button secondary" type="button" disabled>Eliminar</button><button id="graphic-undo" class="button secondary" type="button" disabled>Deshacer</button></div><div class="graphic-rotation" role="group" aria-label="Rotar símbolo seleccionado"><button id="graphic-rotate-left" class="button secondary" type="button" aria-label="Girar 15 grados a la izquierda" disabled>↶ 15°</button><label for="graphic-angle">Ángulo (°)<input id="graphic-angle" type="number" inputmode="decimal" min="0" max="360" step="1" value="0" disabled></label><button id="graphic-rotate-right" class="button secondary" type="button" aria-label="Girar 15 grados a la derecha" disabled>↷ 15°</button><button id="graphic-rotation-reset" class="button secondary" type="button" disabled>Restablecer 0°</button></div></div>
+                <div id="graphic-free-panel">
+                  <p class="graphic-instructions" id="graphic-free-help">Tocá una figura para agregarla. Arrastrala para moverla y usá sus esquinas para cambiar el tamaño. Para girarla como en Word, seleccioná el símbolo y arrastrá su flecha circular. También podés indicar el ángulo con los controles. En computadora, Shift ajusta el giro a pasos de 15°.</p>
+                  <div class="graphic-layout">
+                    <aside class="graphic-symbols"><h3>Simbología del reverso</h3><p>18 figuras de la plantilla original.</p><div id="graphic-palette" class="graphic-palette"></div></aside>
+                    <div class="graphic-canvas-area"><div class="graphic-zoom"><label for="graphic-zoom">Zoom del editor</label><input id="graphic-zoom" type="range" min="50" max="180" value="100" step="10"><output id="graphic-zoom-value" for="graphic-zoom">100%</output></div><div id="graphic-free-viewport" class="graphic-free-viewport"><svg id="graphic-free-canvas" data-graphic-canvas="free" tabindex="0" role="application" aria-label="Editor gráfico completo de la carretera" aria-describedby="graphic-free-help" viewBox="-32 0 122.077 440.922"></svg></div><p class="field-hint">Los rótulos de estación y los controles son guías del editor. El documento conserva su plantilla original.</p></div>
+                  </div>
+                </div>
+                <div id="graphic-station-panel" hidden>
+                  <p class="graphic-instructions">Seleccioná un símbolo en la lista y pulsá Agregar símbolo. Podés moverlo, cambiar su tamaño y girarlo arrastrando la flecha circular que aparece al seleccionarlo, como en Word. Si al girar no cabe, se reduce para mantenerse dentro de su renglón.</p>
+                  <div id="station-graphic-empty" class="station-empty"><strong>Agregá las estaciones de esta hoja para usar este caso.</strong><p>Después podrás colocar sus símbolos en el renglón correspondiente.</p><button id="graphic-go-stations" class="button secondary" type="button">Ir a Estaciones y detalles</button></div>
+                  <div id="station-graphic-list" class="station-graphic-list"></div>
+                </div>
+              </div>
+            </section>
+          </section>
+          <section id="panel-sketch" role="tabpanel" aria-labelledby="tab-sketch" hidden>
+            <section class="card" aria-labelledby="sketch-title">
+              <div class="card-heading"><div><h2 id="sketch-title">Croquis de la localización del camino</h2><p>Dibujá a mano alzada en el espacio de la parte trasera.</p></div><span id="sketch-sheet" class="soft-badge">Hoja 1 de 1</span></div>
+              <div class="card-body">
+                <div class="sketch-toolbar">
+                  <div class="sketch-tools" role="group" aria-label="Herramientas del croquis">
+                    <button id="sketch-pencil" type="button" class="button secondary" aria-pressed="true">✎ Lápiz</button><button id="sketch-eraser" type="button" class="button secondary" aria-pressed="false">Borrador</button><button id="sketch-pan" type="button" class="button secondary" aria-pressed="false">Mover lienzo</button>
+                    <label for="sketch-size">Tamaño<input id="sketch-size" type="range" min="1" max="24" step="1" value="3"><output id="sketch-size-value" for="sketch-size">3</output></label>
+                  </div>
+                  <div class="sketch-tools" role="group" aria-label="Corregir croquis"><button id="sketch-undo" type="button" class="button secondary" disabled>Deshacer</button><button id="sketch-redo" type="button" class="button secondary" disabled>Rehacer</button><button id="sketch-clear" type="button" class="button secondary" disabled>Limpiar croquis</button></div>
+                  <p id="sketch-tool-status" role="status">Lápiz negro: arrastrá para dibujar.</p>
+                </div>
+                <p class="graphic-instructions" id="sketch-help">Elegí Lápiz o Borrador y arrastrá con ratón o dedo. El borrador quita únicamente la parte del trazo por donde pasa. Con zoom, elegí Mover lienzo para recorrer el dibujo. Usá el espacio fuera del lienzo para desplazar la página en teléfono.</p>
+                <div class="sketch-zoom"><label for="sketch-zoom">Zoom del croquis</label><input id="sketch-zoom" type="range" min="100" max="200" step="25" value="100"><output id="sketch-zoom-value" for="sketch-zoom">100%</output></div>
+                <div id="sketch-viewport" class="sketch-viewport"><div id="sketch-surface" class="sketch-surface"><canvas id="sketch-canvas" tabindex="0" role="application" aria-label="Área de dibujo libre del croquis" aria-describedby="sketch-help"></canvas><div id="sketch-cursor" class="sketch-cursor" hidden></div></div></div>
+                <p id="sketch-count" class="field-hint">0 trazos y pasadas de borrador</p><p class="field-hint">El croquis se guarda en esta hoja y en los respaldos. Se incluye en la parte trasera de la vista previa, Excel y PDF.</p>
+              </div>
+            </section>
+          </section>
+        </div>
+
+        <aside class="context-column" aria-label="Resumen y hojas">
+          <section class="card sheets-card" id="sheets-section" aria-labelledby="sheets-title"><div class="card-heading"><div><h2 id="sheets-title">Hojas del inventario</h2><p>Un camino, un mismo encabezado.</p></div><span id="sheet-count" class="count-badge">1</span></div><div class="sheets-list" id="sheets-list" role="group" aria-label="Seleccionar hoja"></div><div class="sheets-bottom"><button class="button add-sheet" id="add-sheet"><svg class="icon"><use href="#i-plus"/></svg>Agregar hoja</button><p>La numeración se actualiza en todas las hojas.</p></div></section>
+          <section class="local-note"><span class="local-symbol"><svg class="icon"><use href="#i-save"/></svg></span><div><strong>Tu trabajo queda guardado</strong><p>En este navegador y dispositivo. Descargá un respaldo para conservarlo o llevarlo a otra computadora.</p><button class="text-button" id="download-backup"><svg class="icon"><use href="#i-download"/></svg>Descargar respaldo</button><button class="text-button import-button" id="import-backup">Abrir un respaldo</button><button class="text-button import-button" id="install-app"><svg class="icon"><use href="#i-download"/></svg>Instalar aplicación</button><input id="backup-file" type="file" accept="application/json,.json" hidden></div></section>
+        </aside>
+      </div>
+      <footer class="page-footer"><span>SIGVI · Inventario de Necesidades del Camino</span><span>DPA-301 · Versión 0.5.0</span></footer>
+    </main>
+  </div>
+
+  <!-- Selector con filtros explícitos: una travesía nacional también conserva N. -->
+  <dialog id="catalog-dialog" class="catalog-dialog" aria-labelledby="catalog-title"><div class="dialog-heading"><div><p class="eyebrow">RED VIAL · CATÁLOGO 2024</p><h2 id="catalog-title">Encontrá tu camino</h2><p>Seleccioná una sección para completar el encabezado.</p></div><button class="icon-button close-dialog" aria-label="Cerrar catálogo"><svg class="icon"><use href="#i-x"/></svg></button></div><div class="catalog-tools"><label class="search-box" for="catalog-search"><svg class="icon"><use href="#i-search"/></svg><input id="catalog-search" type="search" autocomplete="off" placeholder="Código, sección, ruta o lugar…"></label><div class="catalog-filters"><div class="field"><label for="filter-province">Provincia</label><select id="filter-province"></select></div><div class="field"><label for="filter-canton">Cantón</label><select id="filter-canton"></select></div></div></div><div class="result-meta"><span id="result-count" role="status"></span><span>Longitud por sección</span></div><div id="catalog-results" class="catalog-results"></div><div class="catalog-pagination"><button class="button secondary" id="previous-results">Anterior</button><span id="results-page"></span><button class="button secondary" id="next-results">Siguiente</button></div><div class="catalog-bottom">¿El camino no está en el catálogo?<button class="text-button" id="catalog-manual">Agregar manualmente<svg class="icon"><use href="#i-arrow"/></svg></button></div></dialog>
+  <dialog id="preview-dialog" class="preview-dialog" aria-labelledby="preview-title"><div class="dialog-heading"><div><p class="eyebrow">PLANTILLA ORIGINAL DPA-301</p><h2 id="preview-title">Vista previa del documento</h2><p>El mismo documento que se descarga como PDF, con su frente y reverso.</p></div><button class="icon-button close-dialog" aria-label="Cerrar vista previa"><svg class="icon"><use href="#i-x"/></svg></button></div><div class="preview-downloads"><button class="button excel" data-export="excel">Descargar Excel</button><button class="button primary" data-export="pdf">Descargar PDF</button></div><div id="full-preview" class="pdf-pages full-pdf"></div></dialog>
+  <dialog id="help-dialog" class="help-dialog" aria-labelledby="help-title"><div class="dialog-heading"><div><p class="eyebrow">GUÍA RÁPIDA</p><h2 id="help-title">Cómo completar el inventario</h2></div><button class="icon-button close-dialog" aria-label="Cerrar guía"><svg class="icon"><use href="#i-x"/></svg></button></div><ol class="help-list"><li><strong>Elegí el camino.</strong>Buscá el código, el número de ruta o un lugar. Heredia aparece seleccionada al abrir el catálogo.</li><li><strong>Revisá el tramo.</strong>El tipo N/C, la ruta, la longitud, la provincia y el cantón se toman del camino. Podés ajustar DE y A si hace falta.</li><li><strong>Seleccioná la superficie.</strong>Usá uno de los cinco tipos de la plantilla. La macro región siempre es V; NÚMERO es opcional.</li><li><strong>Agregá las hojas que necesités.</strong>Todas comparten el encabezado. En «Estaciones y detalles» registrá los hallazgos de cada hoja. La primera estación queda abajo y las siguientes suben, hasta 26 por hoja.</li><li><strong>Completá las estaciones.</strong>Ingresá la estación en kilómetros: 12,678 se muestra como 12 + 678. Diámetro, longitud y cabezales son opcionales; las medidas muestran metros. Agregá la estación para guardarla. Podés editar o eliminar cada registro.</li><li><strong>Probá la representación gráfica.</strong>En su pestaña, el Caso 1 permite trabajar sobre la carretera completa y el Caso 2 junto a cada estación. Podés arrastrar y cambiar el tamaño de los símbolos. Cada caso guarda su dibujo; la vista previa y las descargas usan el seleccionado.</li><li><strong>Revisá y descargá.</strong>Vista previa, Descargar Excel y Descargar PDF usan la plantilla original. Cada descarga incluye el frente y reverso de la hoja seleccionada; podés exportar un borrador incompleto.</li><li><strong>Conservá un respaldo.</strong>El borrador se guarda en este navegador. El archivo de respaldo permite recuperarlo en otro dispositivo con esta aplicación.</li></ol><div class="help-source"><strong>Fuentes de esta versión</strong><p>Red Vial Nacional 2024: ruta, longitud, tramo y ubicación. Red nacional Heredia: relación del código del camino con la sección de control. Plantilla DPA-301: campos y tipos de superficie. No se adjuntó un catálogo de caminos cantonales; se pueden ingresar manualmente.</p></div></dialog>
+  <dialog id="install-dialog" class="help-dialog" aria-labelledby="install-title"><div class="dialog-heading"><div><p class="eyebrow">PWA · INSTALACIÓN</p><h2 id="install-title">Instalar en esta computadora</h2><p>La aplicación se abrirá en su propia ventana.</p></div><button class="icon-button close-dialog" aria-label="Cerrar instrucciones de instalación"><svg class="icon"><use href="#i-x"/></svg></button></div><ol class="help-list"><li><strong>Abrí la aplicación en Chrome.</strong>Si usás los archivos locales, primero ejecutá herramientas/servir.dart y dejá la terminal abierta.</li><li><strong>Esperá a que esté lista.</strong>El indicador superior mostrará «Modo sin conexión listo» cuando termine la primera carga.</li><li><strong>Instalala desde el navegador.</strong>En Chrome: menú de tres puntos → Transmitir, guardar y compartir → Instalar página como app. También puede aparecer un icono de instalación junto a la dirección.</li><li><strong>Continuá desde el icono de la aplicación.</strong>Para actualizar la versión local, volvé a ejecutar herramientas/servir.dart. Los inventarios permanecen en este navegador; usá el respaldo para llevarlos a otra computadora.</li></ol></dialog>
+  <dialog id="confirm-dialog" class="confirm-dialog" aria-labelledby="confirm-title"><div class="dialog-heading"><div><h2 id="confirm-title"></h2><p id="confirm-message"></p></div></div><div class="confirm-actions"><button class="button secondary" id="confirm-cancel">Cancelar</button><button class="button primary" id="confirm-accept">Continuar</button></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="./js/pwa.js"></script>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
