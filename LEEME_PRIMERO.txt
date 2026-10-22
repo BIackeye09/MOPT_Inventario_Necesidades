@@ -1,0 +1,160 @@
+MOPT - INVENTARIO DE NECESIDADES DEL CAMINO
+PWA 0.5.0 - inicio con Dart, como el Reporte Diario
+
+DESDE VS CODE
+
+1. Extraé TODO el ZIP en una carpeta permanente.
+2. En VS Code: Archivo > Abrir carpeta > MOPT_Inventario_Camino.
+   Elegí la carpeta que contiene herramientas, dist y este archivo.
+3. Verificá la extensión Dart, del autor Dart Code.
+4. Abrí herramientas/servir.dart y presioná F5.
+   La configuración se llama Iniciar inventario MOPT con Dart.
+5. Se abre el navegador en http://localhost:8081.
+   Dejá abierta la terminal mientras trabajás. Ctrl+C para detener.
+
+También podés usar la terminal de esa carpeta:
+
+   dart herramientas/servir.dart
+
+No hace falta abrir el HTML ni usar Live Server. El archivo Dart sirve
+la carpeta dist y abre la aplicación. No requiere Node.js, npm install,
+dart pub get ni SDK de Android.
+
+DART EN CADA COMPUTADORA
+
+Si ya tenés Flutter funcionando, usá el Dart incluido en esa instalación.
+La extensión de VS Code no incluye el SDK.
+Si VS Code no encuentra Dart: Ctrl+Shift+P > Dart: Locate SDK. Seleccioná
+flutter/bin/cache/dart-sdk dentro de tu instalación de Flutter.
+Si la terminal no reconoce dart, agregá flutter/bin a PATH y reiniciá VS Code.
+Para instalar solo Dart en la otra computadora: https://dart.dev/get-dart
+Copiá la carpeta completa del proyecto a cada equipo.
+
+PWA Y RESPALDOS
+
+Esperá el indicador de modo sin conexión listo y pulsá Instalar aplicación.
+Para continuar un inventario en el otro equipo: Descargar respaldo en el
+primero y Abrir un respaldo en el segundo, seleccionando el archivo .json.
+El guardado local no se sincroniza entre computadoras ni navegadores.
+Usá siempre http://localhost:8081 y el mismo navegador en cada equipo.
+
+PUERTO OCUPADO
+
+El inventario usa 8081; Reporte Diario puede seguir usando 8080. Se pueden
+abrir las dos aplicaciones al mismo tiempo. Si 8081 está ocupado por otro
+programa, elegí otro con: dart herramientas/servir.dart --port=8082
+
+IMPRIMIR DESDE EXCEL
+
+Usá Descargar Excel, abrí el archivo en Excel y entrá en Archivo > Imprimir.
+El encabezado usa Arial 14, negrita y negro. LONGITUD (KM) tiene una sola
+celda combinada con el dato centrado. La descripción del cantón queda
+centrada como la de la provincia. Los bordes quedan definidos en negro,
+se conserva su grosor y ambas caras solicitan 600 DPI, sin modo borrador.
+Mantené el papel Carta y el ajuste de página guardado en el archivo.
+Los Excel descargados antes de esta versión deben descargarse otra vez.
+En la carpeta ejemplos hay un XLS para revisar el formato y las dos caras.
+
+CELDAS UNIFICADAS
+
+DE y A tienen una celda por descripción; también se unificaron la descripción
+del cantón, el número y cada recuadro editable de las tablas del frente.
+Las observaciones usan una celda por renglón. Se conserva la cuadrícula
+original del área de representación gráfica de la carretera.
+
+VISTA PREVIA, EXCEL Y PDF
+
+Usá Vista previa, Descargar Excel o Descargar PDF encima del formulario.
+Cada descarga incluye el frente y reverso de la hoja seleccionada.
+Para otra hoja, seleccionála en la lista y volvé a descargar.
+El Excel es .xls y conserva la plantilla original. La vista previa muestra
+el mismo PDF que se descarga. Solo se abre con el botón Vista previa;
+se quitó la miniatura lateral. Podés revisar un borrador incompleto.
+Si un texto es demasiado largo, la aplicación pide acortarlo para que
+quepa sin cambiar el formulario.
+
+ACTUALIZAR DESDE UNA VERSIÓN ANTERIOR
+
+Descargá un respaldo antes de cambiar de carpeta o actualizar.
+Detené el servidor anterior, extraé el paquete completo e iniciá servir.dart.
+Abrí http://localhost:8081 y recargá con Ctrl+Shift+R una vez para actualizar.
+PARA PASAR EL BORRADOR DE 8080 A 8081
+
+Antes de actualizar, abrí el inventario anterior en http://localhost:8080
+y pulsá Descargar respaldo. Iniciá la nueva versión en 8081 y usá Abrir un
+respaldo para cargar ese archivo. El navegador guarda datos distintos por
+puerto. Si ocupás volver al puerto anterior para descargar el respaldo,
+ejecutá dart herramientas/servir.dart --port=8080 y detené temporalmente
+Reporte Diario para evitar el conflicto. Reinstalá la PWA desde 8081 si
+antes la habías instalado desde 8080.
+
+ESTACIONES Y DETALLES
+
+Abrí la pestaña Estaciones y detalles y completá el formulario.
+La estación se ingresa en kilómetros: 0,0 muestra 0 + 000 y 12,678 muestra
+12 + 678. Acepta coma o punto y hasta tres decimales.
+Pulsá Agregar estación para guardarla. La primera se coloca abajo y las
+siguientes suben. Todas las columnas respetan ese mismo orden.
+Diámetro y longitud son opcionales, aceptan decimales y muestran metros.
+Número de cabezales es opcional y solo acepta enteros. Tipo es texto libre.
+Observaciones describe lo encontrado, por ejemplo Huecos 2x2 (6).
+Podés editar o eliminar cada registro. La tabla usa Arial 12 en negro.
+Cada hoja admite 26 estaciones; al llenarla aparece Agregar hoja y continuar.
+Los respaldos guardan las estaciones de todas las hojas.
+En ejemplos hay un Excel, un PDF y un respaldo con tres estaciones.
+
+REPRESENTACIÓN GRÁFICA: DOS CASOS
+
+Abrí la pestaña Representación gráfica de la hoja seleccionada.
+Caso 1: editor completo. Hacé clic en la simbología o arrastrá una figura
+sobre la carretera. Movela con el ratón y arrastrá sus esquinas para cambiar
+el tamaño. El zoom permite trabajar más cerca.
+Caso 2: por estación. Elegí un símbolo junto a la estación y pulsá Agregar
+símbolo. Movelo o cambiale el tamaño dentro de su renglón.
+Cada caso conserva su propio dibujo. La vista previa y las descargas usan
+el caso que esté seleccionado. El indicador superior muestra cuál es.
+Podés reducir, agrandar, girar, duplicar, eliminar y deshacer. Las flechas del
+teclado mueven un símbolo seleccionado y Suprimir lo elimina.
+Los dos dibujos se guardan por hoja y se incluyen en los respaldos.
+Excel recibe cada símbolo como una imagen independiente, conservando su
+posición, tamaño y giro. Se mantienen las líneas y los dibujos de la plantilla.
+Seleccioná una figura y usá los botones de giro de 15° a izquierda o derecha,
+escribí un ángulo exacto o pulsá Restablecer 0°. El giro también se guarda en
+los respaldos. Si al girar no cabe en la estación, se reduce sin recortarse.
+También podés arrastrar la flecha circular que aparece al seleccionar la
+figura, como en Word. Funciona en los dos casos, con ratón o dedo.
+En computadora, mantené Shift para girar en pasos de 15°.
+En ejemplos hay dos XLS y dos PDF para comparar, más comparar-dos-casos.json
+para abrir ambos dibujos de muestra desde la aplicación.
+
+PROBAR EN TELÉFONO SIN SUBIR A GITHUB
+
+Abrí https://mopt-inventario-caminos-sgv.docilepeony128.chatgpt.site
+con tu misma cuenta autorizada. El enlace es privado y permite probar los dos
+casos sin mantener encendida la computadora. Tocá un símbolo para seleccionarlo;
+arrastralo con el dedo y usá los controles de tamaño y giro.
+Para llevar un inventario de la computadora al teléfono, descargá su respaldo
+JSON y abrilo en el teléfono con Abrir un respaldo. El guardado no se sincroniza
+entre dispositivos.
+
+CROQUIS DE LA PARTE TRASERA
+
+Abrí Parte trasera · Croquis. Elegí Lápiz para dibujar cualquier trazo en negro
+o Borrador para quitar solo el fragmento por donde lo pasás, como en Paint.
+Funciona con ratón, lápiz táctil o dedo. Tamaño ajusta cada herramienta.
+Deshacer y Rehacer permiten corregir; Limpiar croquis vacía el dibujo de la
+hoja seleccionada y se puede deshacer. Con Zoom podés ampliar el área y con
+Mover lienzo recorrerla sin dibujar.
+El croquis se guarda por hoja y se incluye en los respaldos, vista previa,
+Excel y PDF. La plantilla conserva sus líneas, títulos y simbología.
+En Excel queda como una imagen independiente; editá los trazos en la aplicación.
+En ejemplos están croquis-localizacion.xls, croquis-localizacion.pdf y
+croquis-localizacion.json. Abrí este último como respaldo para probarlo.
+
+ALCANCE
+
+Encabezado DPA-301, caminos, macro región V, superficie actual, hojas,
+estaciones, alcantarillas, cabezales, observaciones por estación, dos editores
+gráficos con la simbología original y giro con flecha circular, croquis libre con
+lápiz y borrador, guardado,
+respaldos, vista previa, Excel y PDF.
