@@ -1,0 +1,174 @@
+{
+  "application": "MOPT-DPA-301",
+  "backupVersion": 1,
+  "inventory": {
+    "schemaVersion": 1,
+    "id": "2a28585d-b667-48cb-a8a9-c6c13d1ac666",
+    "number": "GRAFICO-001",
+    "macroRegion": "V",
+    "surface": "2",
+    "road": {
+      "id": "N:RVN_0524:40080:710",
+      "type": "N",
+      "code": "4-0080-00",
+      "section": "40080",
+      "route": "126",
+      "lengthKm": 4.98,
+      "from": "Barva (Quebrada Seca)(Lte Cantonal)",
+      "to": "Birrí (Río Porrosatí)(Lte Cantonal)",
+      "description": "Barva (Quebrada Seca)(Lte Cantonal)-Birrí (Río Porrosatí)(Lte Cantonal)",
+      "provinceCode": "4",
+      "provinceName": "Heredia",
+      "cantonCode": "02",
+      "cantonName": "Barva",
+      "network": "Ruta nacional",
+      "needsReview": false,
+      "source": {
+        "file": "Red Vial Nacional 2024(1).xlsx",
+        "sheet": "RVN_0524",
+        "row": 710
+      },
+      "codeSource": "red nacional heredia(1).rtf",
+      "mode": "catalog"
+    },
+    "sheets": [
+      {
+        "id": "04949ddf-85f1-43e5-8df8-e1b806cb4fc6",
+        "stations": [
+          {
+            "id": "inicio",
+            "station": "0,0",
+            "observations": "Inicio del recorrido",
+            "diameter": "",
+            "culvertLength": "",
+            "headwallNumber": "",
+            "headwallType": ""
+          },
+          {
+            "id": "medio",
+            "station": "1,25",
+            "observations": "Alcantarilla con sedimentos",
+            "diameter": "0,80",
+            "culvertLength": "6,50",
+            "headwallNumber": "2",
+            "headwallType": "Toma"
+          },
+          {
+            "id": "final",
+            "station": "4,9",
+            "observations": "Huecos 2x2 (6)",
+            "diameter": "",
+            "culvertLength": "",
+            "headwallNumber": "",
+            "headwallType": ""
+          }
+        ],
+        "graphics": {
+          "activeMode": "free",
+          "free": [
+            {
+              "id": "e51b64c1-9aec-4bfb-b242-372ed0e35e1c",
+              "symbolId": "poste-electrico",
+              "x": 0.74045584,
+              "y": 0.9703391983162555,
+              "width": 0.07908832,
+              "height": 0.024426542563083666,
+              "rotation": 90
+            },
+            {
+              "id": "2b89c246-b7a7-499c-af9b-932cfc615691",
+              "symbolId": "alcantarilla-existente",
+              "x": 0.38987903,
+              "y": 0.9404993123888579,
+              "width": 0.22024195,
+              "height": 0.014316192460117632,
+              "rotation": 30
+            },
+            {
+              "id": "6c317f48-675b-4f07-a7df-8baa0dd67113",
+              "symbolId": "chapea-mano",
+              "x": 0.07788226,
+              "y": 0.9445739824676928,
+              "width": 0.24423549,
+              "height": 0.006166853000349254,
+              "rotation": 345
+            },
+            {
+              "id": "7b83d0e7-d2c9-41d2-ab3c-fe0acdf2739a",
+              "symbolId": "bacheo",
+              "x": 0.3146246,
+              "y": 0.9055266191096157,
+              "width": 0.1707508,
+              "height": 0.01446918978390741,
+              "rotation": 45
+            },
+            {
+              "id": "49b9c17e-f374-496f-96b6-ee588dc6f3ae",
+              "symbolId": "gaviones",
+              "x": 0.7650245,
+              "y": 0.9005471489288355,
+              "width": 0.069951,
+              "height": 0.024428130145467995,
+              "rotation": 270
+            }
+          ],
+          "station": [
+            {
+              "id": "1493afe8-da6f-49be-a979-bbceadc350cb",
+              "symbolId": "poste-electrico",
+              "stationId": "inicio",
+              "x": 0.74045584,
+              "y": 0.15,
+              "width": 0.07908832,
+              "height": 0.7,
+              "rotation": 90
+            },
+            {
+              "id": "9ee56b18-8128-4c4e-aa25-2a1970c200ec",
+              "symbolId": "alcantarilla-existente",
+              "stationId": "medio",
+              "x": 0.38987903,
+              "y": 0.29486792,
+              "width": 0.22024195,
+              "height": 0.41026415,
+              "rotation": 30
+            },
+            {
+              "id": "c3a42dc4-0463-48be-978e-c4d67f477baf",
+              "symbolId": "chapea-mano",
+              "stationId": "medio",
+              "x": 0.07788226,
+              "y": 0.41163717,
+              "width": 0.24423549,
+              "height": 0.17672567,
+              "rotation": 345
+            },
+            {
+              "id": "24d161fe-2997-476d-be1b-ac5114512b5e",
+              "symbolId": "bacheo",
+              "stationId": "final",
+              "x": 0.3146246,
+              "y": 0.29268915,
+              "width": 0.1707508,
+              "height": 0.4146217,
+              "rotation": 45
+            },
+            {
+              "id": "5f787c3a-1dea-4d78-9b85-d5b6d40fefd0",
+              "symbolId": "gaviones",
+              "stationId": "final",
+              "x": 0.7650245,
+              "y": 0.15,
+              "width": 0.069951,
+              "height": 0.7,
+              "rotation": 270
+            }
+          ]
+        }
+      }
+    ],
+    "activeSheetId": "04949ddf-85f1-43e5-8df8-e1b806cb4fc6",
+    "createdAt": "2026-10-21T19:38:17.378Z",
+    "updatedAt": "2026-10-21T19:38:17.379Z"
+  }
+}

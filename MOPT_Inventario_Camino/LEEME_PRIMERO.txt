@@ -1,0 +1,60 @@
+INVENTARIO DE NECESIDADES DEL CAMINO · MOPT
+Versión 0.6.3 · 26/10/2026
+
+PARA INICIAR
+1. Descomprimí toda la carpeta.
+2. Abrí una terminal dentro del proyecto.
+3. Ejecutá: dart herramientas/servir.dart
+4. Abrí http://localhost:8081 y mantené abierta la terminal.
+
+También podés usar Live Server sobre dist/index.html. La instalación como
+app requiere HTTPS o localhost. El puerto 8081 evita el conflicto con el
+reporte que utiliza 8080.
+
+CAMBIOS DE ESTA VERSIÓN
+- Proyecto completo: 97 archivos. Aplicación dist/: 49 archivos.
+- Simbología agrupada en un catálogo, con las mismas imágenes originales.
+- Ver SUBIR_A_GITHUB.md para subir todo o hacerlo por tres segmentos.
+- Sin lateral de instalación/respaldo. Instalar queda junto a Vista previa.
+- Hojas arriba, en un selector compacto con Agregar y Eliminar.
+- Dos dedos para agrandar o achicar símbolos en ambos casos: apoyá el
+  primero sobre el símbolo y después el segundo sobre el dibujo.
+- Mayor área de agarre y arrastre con un dedo, incluso sobre líneas finas.
+- Caso 1 con página ampliada al alto del dibujo, conservando su ancho.
+  Se usa el desplazamiento normal de la página, sin otro scroll dentro de la ruta.
+- Giro con flecha circular y controles exactos desplegables.
+- Croquis en pantalla blanca aparte; podés girar el teléfono y volver con
+  Volver a la app. Lápiz, borrador parcial, tamaños, zoom y Deshacer.
+- Observaciones del reverso fuera del dibujo, exportadas en los ocho
+  renglones originales con letra negra y legible.
+
+DOCUMENTOS
+Vista previa abre el documento completo, con frente y reverso. Excel y PDF
+utilizan la misma hoja y caso seleccionado. La plantilla oficial conserva
+sus medidas, líneas y dibujos. Los datos del encabezado siguen en Arial 14
+negrita; las estaciones y observaciones en Arial 12 negro en Excel.
+Si una observación supera ocho renglones, acortala o usá otra hoja.
+
+GUARDADO
+El borrador se guarda automáticamente en este navegador y dispositivo.
+Se recuperan los borradores de versiones anteriores. No hay descarga ni
+importación de respaldos ni sincronización entre equipos. Antes de crear
+un inventario nuevo, descargá las hojas que necesités conservar en Excel
+o PDF. Crear uno nuevo reemplaza el borrador después de confirmarlo.
+Cambiar dominio, navegador o puerto crea un guardado distinto.
+
+ACTUALIZAR TU WEB
+Reemplazá el contenido completo de dist/ en la carpeta publicable que ya
+usa tu hosting, conservando las rutas. No subás el ZIP como página web.
+Si GitHub Pages sirve docs/, copiá allí el contenido de dist/.
+El proyecto completo tiene 97 archivos y dist/ tiene 49. El resto del proyecto son
+herramientas, código de prueba y ejemplos para conservar en tu equipo.
+Después de actualizar, recargá con conexión o cerrá y abrí la app.
+La versión se muestra al final de la página: 0.6.3.
+
+EJEMPLOS
+En ejemplos/croquis-localizacion.xls y .pdf podés revisar el croquis y
+las observaciones del reverso. Los JSON son datos internos de prueba;
+no se importan desde la interfaz de esta versión.
+
+Ver README.md para detalles de uso, plantilla y pruebas.

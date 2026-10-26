@@ -1,0 +1,28 @@
+COMPARAR LOS DOS CASOS DE REPRESENTACIÓN GRÁFICA
+
+1. En la aplicación, usá Abrir un respaldo y elegí comparar-dos-casos.json.
+   Se ofrece descargar una copia del borrador actual antes de abrirlo.
+2. Abrí Representación gráfica y seleccioná Caso 1: Editor completo.
+3. Mové un símbolo, cambiale el tamaño y giralo arrastrando la flecha circular,
+   como en Word. También podés usar los botones de 15° o Ángulo (°).
+   Descargá Excel o PDF para comprobar su orientación.
+4. Seleccioná Caso 2: Por estación. Su dibujo de muestra sigue intacto.
+5. Elegí una figura en una estación y pulsá Agregar símbolo. Probá moverla
+   y cambiarle el tamaño y el giro dentro del renglón.
+6. Descargá este caso y compará ambos archivos con tu jefa.
+
+Los ejemplos XLS y PDF incluidos muestran las mismas cinco figuras en
+las mismas posiciones y giros (90°, 30°, 345°, 45° y 270°). Así se puede comparar el modo de trabajar de cada
+caso manteniendo el mismo resultado de documento.
+
+PROBAR EL CROQUIS
+
+1. Abrí croquis-localizacion.json como respaldo.
+2. Entrá en Parte trasera · Croquis. Seleccioná Lápiz y dibujá un trazo.
+3. Seleccioná Borrador y pasalo por una parte del trazo para quitar ese fragmento.
+4. Probá Deshacer, Rehacer y el ajuste de Tamaño.
+5. Con zoom, Mover lienzo permite recorrer el dibujo con ratón o dedo.
+6. Descargá Excel o PDF y revisá el croquis en la segunda página.
+
+croquis-localizacion.xls y croquis-localizacion.pdf incluyen el mismo dibujo
+de muestra, con un fragmento borrado. El marco y los títulos son los originales.
