@@ -7,6 +7,7 @@ export function setupSketch({getInventory,commit,notify,confirmAction}) {
   const canvas=$('sketch-canvas'),context=canvas.getContext('2d'),cursor=$('sketch-cursor'),viewport=$('sketch-viewport');
   canvas.width=2160;canvas.height=Math.round(canvas.width*SKETCH_FRAME.height/SKETCH_FRAME.width);
   let sheetId='',signature='',tool='pen',draft=null,internal=false,limited=false;
+  let paperMode='fill',paperWidth=0,paperHeight=0,previousViewport=null,fullscreenOwned=false;
   const sizes={pen:3,eraser:24},histories=new Map();
   const sheet=()=>getInventory().sheets.find(s=>s.id===getInventory().activeSheetId);
   const state=()=>sheet().sketch??=createSketch();
@@ -30,7 +31,15 @@ export function setupSketch({getInventory,commit,notify,confirmAction}) {
     internal=true;try{commit();}finally{internal=false;}
     signature=JSON.stringify(state());paint();controls();
   }
-  function selectTool(value){tool=value;controls();}
+  // Las herramientas flotan sobre el papel; nunca reservan una franja de pantalla.
+  function menu(open) {
+    if(open)flush();
+    $('sketch-menu').hidden=!open;
+    $('sketch-menu-toggle').setAttribute('aria-expanded',String(open));
+    $('sketch-menu-toggle').textContent=open?'×':'☰';
+    if(!open&&$('sketch-dialog').open)canvas.focus({preventScroll:true});
+  }
+  function selectTool(value){tool=value;controls();menu(false);}
   function point(event) {
     const box=canvas.getBoundingClientRect();
     return sketchPoint((event.clientX-box.left)/box.width,(event.clientY-box.top)/box.height);
@@ -43,6 +52,7 @@ export function setupSketch({getInventory,commit,notify,confirmAction}) {
   }
   function start(event) {
     if(event.button!==0||draft)return;
+    menu(false);
     if(!context){notify('Este navegador no permite dibujar el croquis.');return;}
     if(tool==='pan'){
       draft={kind:'pan',pointerId:event.pointerId,sheetId:sheet().id,x:event.clientX,y:event.clientY,left:viewport.scrollLeft,top:viewport.scrollTop};
@@ -99,14 +109,43 @@ export function setupSketch({getInventory,commit,notify,confirmAction}) {
   }
   function fitPaper() {
     if(!$('sketch-dialog').open)return;
-    const width=Math.max(1,viewport.clientWidth-14),height=Math.max(1,viewport.clientHeight-14);
-    const fit=Math.min(width,height*SKETCH_FRAME.width/SKETCH_FRAME.height);
-    $('sketch-surface').style.width=`${fit*Number($('sketch-zoom').value||100)/100}px`;
+    const width=Math.max(1,viewport.clientWidth),height=Math.max(1,viewport.clientHeight),ratio=SKETCH_FRAME.width/SKETCH_FRAME.height;
+    const center=previousViewport&&paperWidth?{x:(viewport.scrollLeft+previousViewport.width/2)/paperWidth,y:(viewport.scrollTop+previousViewport.height/2)/paperHeight}:{x:.5,y:.5};
+    // Llenar la pantalla conserva la proporción del formulario. En una pantalla
+    // distinta se recorre el papel con Mover lienzo, sin estirar los trazos.
+    const base=paperMode==='fill'?Math.max(width,height*ratio):Math.min(width,height*ratio);
+    paperWidth=base*Number($('sketch-zoom').value||100)/100;paperHeight=paperWidth/ratio;
+    $('sketch-surface').style.width=`${paperWidth}px`;$('sketch-surface').style.height=`${paperHeight}px`;
+    previousViewport={width,height};
+    viewport.scrollLeft=Math.max(0,Math.min(paperWidth-width,center.x*paperWidth-width/2));
+    viewport.scrollTop=Math.max(0,Math.min(paperHeight-height,center.y*paperHeight-height/2));
+  }
+  function viewPaper(mode) {
+    flush();paperMode=mode;$('sketch-zoom').value='100';$('sketch-zoom-value').textContent='100%';fitPaper();menu(false);
+  }
+  function leaveFullscreen() {
+    if(fullscreenOwned&&document.fullscreenElement===document.documentElement) {
+      try{Promise.resolve(document.exitFullscreen()).catch(()=>{});}catch{}
+    }
+    fullscreenOwned=false;
+  }
+  function enterFullscreen() {
+    const root=document.documentElement;
+    if(!root?.requestFullscreen||document.fullscreenElement)return;
+    fullscreenOwned=true;
+    try {
+      // Se solicita desde el clic del usuario. Si el navegador no lo admite,
+      // el diálogo sigue ocupando todo el espacio disponible de la aplicación.
+      Promise.resolve(root.requestFullscreen({navigationUI:'hide'})).then(()=>{
+        if($('sketch-dialog').open)fitPaper();else leaveFullscreen();
+      }).catch(()=>{fullscreenOwned=false;});
+    }catch{fullscreenOwned=false;}
   }
   function openScreen() {
     $('sketch-dialog').showModal();document.body.classList.add('drawing-open');
+    menu(false);paperMode='fill';paperWidth=0;paperHeight=0;previousViewport=null;
     $('sketch-zoom').value='100';$('sketch-zoom-value').textContent='100%';
-    fitPaper();viewport.scrollLeft=0;viewport.scrollTop=0;canvas.focus({preventScroll:true});
+    fitPaper();enterFullscreen();canvas.focus({preventScroll:true});
   }
   function closeScreen() {flush();$('sketch-dialog').close();}
   function undo() {
@@ -150,9 +189,13 @@ export function setupSketch({getInventory,commit,notify,confirmAction}) {
     }
   });
   $('sketch-zoom').addEventListener('input',event=>{fitPaper();$('sketch-zoom-value').textContent=`${event.target.value}%`;});
+  $('sketch-menu-toggle').addEventListener('click',()=>menu($('sketch-menu').hidden));
+  $('sketch-menu-close').addEventListener('click',()=>menu(false));
+  $('sketch-fit').addEventListener('click',()=>viewPaper('fit'));$('sketch-fill').addEventListener('click',()=>viewPaper('fill'));
   $('open-sketch').addEventListener('click',openScreen);$('close-sketch').addEventListener('click',closeScreen);
-  $('sketch-dialog').addEventListener('cancel',flush);
-  $('sketch-dialog').addEventListener('close',()=>{flush();document.body.classList.remove('drawing-open');$('open-sketch').focus({preventScroll:true});});
+  $('sketch-dialog').addEventListener('cancel',event=>{if(!$('sketch-menu').hidden){event.preventDefault();menu(false);}else flush();});
+  $('sketch-dialog').addEventListener('close',()=>{flush();menu(false);leaveFullscreen();document.body.classList.remove('drawing-open');$('open-sketch').focus({preventScroll:true});});
+  document.addEventListener?.('fullscreenchange',fitPaper);
   if(globalThis.ResizeObserver)new ResizeObserver(fitPaper).observe(viewport);
   globalThis.addEventListener?.('resize',fitPaper);
   globalThis.addEventListener?.('pagehide',flush);

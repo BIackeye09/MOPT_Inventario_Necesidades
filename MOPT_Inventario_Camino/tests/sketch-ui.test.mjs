@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import {setupSketch} from '../dist/js/sketch-ui.js';
 import {createInventory,addSheet} from '../dist/js/model.js';
 import {documentValues} from '../dist/js/documents.js';
-function screen() {
+import {SKETCH_FRAME} from '../dist/js/sketch-model.js';
+function screen({fullscreen='unsupported'}={}) {
   let inventory=addSheet(createInventory()),ui,commits=0;const nodes=new Map(),calls=[],saved=[];
   const context={globalCompositeOperation:'source-over',save(){saved.push(this.globalCompositeOperation);},restore(){this.globalCompositeOperation=saved.pop();},
     clearRect(){calls.push(['clear']);},beginPath(){},rect(){},clip(){},moveTo(){},lineTo(){},arc(){},
@@ -14,11 +15,19 @@ function screen() {
     addEventListener(name,fn){this.events[name]=fn;},setAttribute(name,value){this[name]=String(value);},removeAttribute(name){delete this[name];},focus(){},getContext(){return context;},
     showModal(){this.open=true;},close(){this.open=false;this.events.close?.();},
     getBoundingClientRect(){return {left:0,top:0,width:1000,height:600};},setPointerCapture(id){this.captures.add(id);},hasPointerCapture(id){return this.captures.has(id);},releasePointerCapture(id){this.captures.delete(id);}});return nodes.get(id);}
-  globalThis.document={getElementById:node,body:{classList:{add(){},remove(){}}}};
+  const fullscreenCalls={enter:0,exit:0};
+  globalThis.document={getElementById:node,body:{classList:{add(){},remove(){}}},documentElement:{},events:{},addEventListener(name,fn){this.events[name]=fn;}};
+  const doc=globalThis.document;
+  if(fullscreen!=='unsupported')doc.documentElement.requestFullscreen=()=>{
+    fullscreenCalls.enter++;if(fullscreen==='denied')return Promise.reject(new Error('No admitido'));
+    doc.fullscreenElement=doc.documentElement;return Promise.resolve();
+  };
+  doc.exitFullscreen=()=>{fullscreenCalls.exit++;doc.fullscreenElement=null;return Promise.resolve();};
+  if(fullscreen==='existing')doc.fullscreenElement=doc.documentElement;
   ui=setupSketch({getInventory:()=>inventory,commit(){commits++;ui?.refresh();},notify(){},confirmAction:async()=>true});
   const pointer=(name,x=100,y=100,extra={})=>node('sketch-canvas').events[name]({button:0,pointerId:1,clientX:x,clientY:y,preventDefault(){},...extra});
   const line=()=>{pointer('pointerdown',100,120);pointer('pointermove',500,300);pointer('pointerup',700,420);};
-  return {inventory,node,ui,pointer,line,calls,click:id=>node(id).events.click(),get commits(){return commits;}};
+  return {inventory,node,ui,pointer,line,calls,fullscreenCalls,click:id=>node(id).events.click(),get commits(){return commits;}};
 }
 test('lápiz y borrador parcial se guardan como operaciones y llegan al documento',()=>{
   const s=screen();s.line();s.click('sketch-eraser');s.pointer('pointerdown',400,250);s.pointer('pointermove',450,260);s.pointer('pointerup',460,260);
@@ -66,6 +75,41 @@ test('girar la pantalla y ampliar ajusta el papel sin cambiar los puntos del cro
   const s=screen();s.line();const before=structuredClone(s.inventory.sheets[0].sketch);
   s.click('open-sketch');s.node('sketch-viewport').clientHeight=250;
   s.node('sketch-zoom').value='150';s.node('sketch-zoom').events.input({target:{value:'150'}});
-  const width=parseFloat(s.node('sketch-surface').style.width);assert.ok(width>590&&width<620);
+  const width=parseFloat(s.node('sketch-surface').style.width),height=parseFloat(s.node('sketch-surface').style.height);
+  assert.ok(width>=s.node('sketch-viewport').clientWidth&&height>=s.node('sketch-viewport').clientHeight);
+  assert.ok(Math.abs(width/height-SKETCH_FRAME.width/SKETCH_FRAME.height)<1e-8);
   assert.deepEqual(s.inventory.sheets[0].sketch,before);
+});
+
+test('el croquis abre sin barras y el menú conserva el trazo al abrirse y se oculta al elegir herramienta',()=>{
+  const s=screen();s.click('open-sketch');
+  assert.equal(s.node('sketch-menu').hidden,true);assert.equal(s.node('sketch-menu-toggle')['aria-expanded'],'false');
+  s.pointer('pointerdown',100,120);s.pointer('pointermove',300,200);s.click('sketch-menu-toggle');
+  assert.equal(s.inventory.sheets[0].sketch.strokes.length,1);assert.equal(s.node('sketch-canvas').captures.size,0);
+  assert.equal(s.node('sketch-menu').hidden,false);s.click('sketch-eraser');
+  assert.equal(s.node('sketch-menu').hidden,true);assert.equal(s.node('sketch-canvas').dataset.tool,'eraser');
+  s.click('sketch-menu-toggle');s.click('sketch-menu-close');assert.equal(s.node('sketch-menu').hidden,true);
+});
+
+test('llenar pantalla cubre ambos formatos y ver la hoja completa conserva proporciones y trazos',()=>{
+  const s=screen();s.line();const before=structuredClone(s.inventory.sheets[0].sketch);
+  for(const [width,height]of [[390,844],[844,390]]) {
+    Object.assign(s.node('sketch-viewport'),{clientWidth:width,clientHeight:height});s.click('open-sketch');
+    let paper=s.node('sketch-surface').style;
+    assert.ok(parseFloat(paper.width)>=width&&parseFloat(paper.height)>=height);
+    s.click('sketch-fit');paper=s.node('sketch-surface').style;
+    assert.ok(parseFloat(paper.width)<=width+1e-7&&parseFloat(paper.height)<=height+1e-7);
+    assert.ok(Math.abs(parseFloat(paper.width)/parseFloat(paper.height)-SKETCH_FRAME.width/SKETCH_FRAME.height)<1e-8);
+    assert.deepEqual(s.inventory.sheets[0].sketch,before);s.click('close-sketch');
+  }
+});
+
+test('se solicita pantalla completa desde Abrir y se sale solo si la activó el croquis',async()=>{
+  const s=screen({fullscreen:'supported'});s.click('open-sketch');await Promise.resolve();
+  assert.equal(s.fullscreenCalls.enter,1);s.click('close-sketch');assert.equal(s.fullscreenCalls.exit,1);
+  const existing=screen({fullscreen:'existing'});existing.click('open-sketch');existing.click('close-sketch');
+  assert.equal(existing.fullscreenCalls.enter,0);assert.equal(existing.fullscreenCalls.exit,0);
+  const denied=screen({fullscreen:'denied'});denied.click('open-sketch');await Promise.resolve();await Promise.resolve();
+  assert.equal(denied.node('sketch-dialog').open,true);assert.equal(denied.node('sketch-menu').hidden,true);
+  denied.click('close-sketch');assert.equal(denied.fullscreenCalls.exit,0);
 });

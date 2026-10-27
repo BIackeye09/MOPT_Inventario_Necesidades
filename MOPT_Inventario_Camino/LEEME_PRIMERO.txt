@@ -1,5 +1,5 @@
 INVENTARIO DE NECESIDADES DEL CAMINO · MOPT
-Versión 0.6.3 · 26/10/2026
+Versión 0.8.0 · 27/10/2026
 
 PARA INICIAR
 1. Descomprimí toda la carpeta.
@@ -12,19 +12,31 @@ app requiere HTTPS o localhost. El puerto 8081 evita el conflicto con el
 reporte que utiliza 8080.
 
 CAMBIOS DE ESTA VERSIÓN
+- Interfaz móvil: secciones abajo, descargas en una fila y campos legibles.
+- Editor gráfico a pantalla completa, con dos modos independientes:
+  Mover y zoom: un dedo mueve la vista; dos dedos acercan o alejan.
+  Símbolo: un dedo mueve una figura; dos dedos cambian su tamaño.
+- Agregar abre la lista de símbolos; ☰ reúne las herramientas adicionales.
+- El Caso 2 permite cambiar de estación desde el selector del editor.
+- Tocar una miniatura abre el editor; recorrer la página no mueve figuras.
+- Croquis sin barras: solo papel blanco y acceso flotante al menú ☰.
+- Herramientas y Volver a la app dentro de ☰; se ocultan al dibujar.
+- Símbolos girados junto a los bordes, sin bloquearlos por espacio invisible.
+- Alcantarillas del Caso 2 extendidas al ancho de la calzada al agregarlas.
+  Se pueden ajustar después; los símbolos guardados mantienen su tamaño.
 - Proyecto completo: 97 archivos. Aplicación dist/: 49 archivos.
 - Simbología agrupada en un catálogo, con las mismas imágenes originales.
 - Ver SUBIR_A_GITHUB.md para subir todo o hacerlo por tres segmentos.
 - Sin lateral de instalación/respaldo. Instalar queda junto a Vista previa.
 - Hojas arriba, en un selector compacto con Agregar y Eliminar.
-- Dos dedos para agrandar o achicar símbolos en ambos casos: apoyá el
-  primero sobre el símbolo y después el segundo sobre el dibujo.
+- En modo Símbolo, dos dedos para agrandar o achicar en ambos casos:
+  apoyá el primero sobre el símbolo y después el segundo sobre el dibujo.
 - Mayor área de agarre y arrastre con un dedo, incluso sobre líneas finas.
 - Caso 1 con página ampliada al alto del dibujo, conservando su ancho.
   Se usa el desplazamiento normal de la página, sin otro scroll dentro de la ruta.
 - Giro con flecha circular y controles exactos desplegables.
 - Croquis en pantalla blanca aparte; podés girar el teléfono y volver con
-  Volver a la app. Lápiz, borrador parcial, tamaños, zoom y Deshacer.
+  ☰ > Volver a la app. Lápiz, borrador parcial, tamaños, zoom y Deshacer.
 - Observaciones del reverso fuera del dibujo, exportadas en los ocho
   renglones originales con letra negra y legible.
 
@@ -50,7 +62,7 @@ Si GitHub Pages sirve docs/, copiá allí el contenido de dist/.
 El proyecto completo tiene 97 archivos y dist/ tiene 49. El resto del proyecto son
 herramientas, código de prueba y ejemplos para conservar en tu equipo.
 Después de actualizar, recargá con conexión o cerrá y abrí la app.
-La versión se muestra al final de la página: 0.6.3.
+La versión se muestra al final de la página: 0.8.0.
 
 EJEMPLOS
 En ejemplos/croquis-localizacion.xls y .pdf podés revisar el croquis y

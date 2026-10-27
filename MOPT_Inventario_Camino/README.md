@@ -1,35 +1,46 @@
 # Inventario de Necesidades del Camino · MOPT
 
-Aplicación DPA-301, versión 0.6.3 · 26 de octubre de 2026.
+Aplicación DPA-301, versión 0.8.0 · 27 de octubre de 2026.
 Interfaz en español para computadora y teléfono; servidor local con Dart en el puerto **8081**.
 
 ## Uso
 
 1. Seleccionar un camino del catálogo o ingresarlo manualmente y revisar el encabezado.
-2. Usar la barra **Hoja**, arriba de las pestañas, para seleccionar, agregar o eliminar hojas.
+2. Usar la barra **Hoja** para seleccionar, agregar o eliminar hojas. En teléfono, las secciones están en la navegación inferior.
 3. Completar **Estaciones y detalles**. La primera estación queda abajo y las siguientes suben; cada hoja admite 26.
-4. En **Representación gráfica**, probar ambos casos. La vista previa y las descargas usan el caso seleccionado.
-5. En **Parte trasera · Croquis**, abrir el lienzo blanco a pantalla completa y volver con **Volver a la app**.
+4. En **Representación gráfica**, elegir un caso y abrir el dibujo. El Caso 2 tiene **Editar dibujo** junto a cada estación. La vista previa y las descargas usan el caso seleccionado.
+5. En **Parte trasera · Croquis**, abrir la hoja blanca a pantalla completa. El menú **☰** reúne las herramientas y **Volver a la app**.
 6. Escribir las **Observaciones del reverso** fuera del lienzo. Se distribuyen en los ocho renglones originales.
 7. Abrir **Vista previa** o descargar **Excel** y **PDF** de la hoja seleccionada, con sus dos caras.
 
 **Instalar** queda junto a Vista previa. La instalación utiliza el aviso del navegador o muestra instrucciones para Android, iPhone y computadora. El guardado del borrador sigue siendo automático en el mismo navegador y dispositivo. No hay sección lateral, descarga/importación de respaldos ni descarga automática al crear un inventario nuevo. No hay sincronización entre equipos. Crear un inventario nuevo pide confirmación si hay datos y reemplaza el borrador; descargá antes las hojas que necesités conservar.
 
-## Símbolos en teléfono
+## Trabajo desde el teléfono
 
-- Tocá una figura de la paleta, o agregala desde la lista de una estación.
-- Poné un dedo sobre el símbolo y arrastrá para moverlo.
-- Manteniendo ese dedo sobre el símbolo, apoyá un segundo dedo en el dibujo; separalos para agrandar o juntalos para reducir. Al levantar uno podés seguir moviendo con el otro.
-- El área de agarre incluye un margen alrededor de las líneas finas. Los símbolos y controles no permiten seleccionar la imagen de la carretera.
-- La flecha circular gira como en Word. **Giro y ángulo exacto** abre los controles numéricos. Reducir, Agrandar y Deshacer siguen disponibles.
-- El tamaño del símbolo respeta sus proporciones durante el gesto y su contorno queda dentro del recuadro, incluso girado. Cada gesto completo ocupa un paso de Deshacer.
-- El Caso 1 conserva el ancho de trabajo de la carretera, con un máximo de 440 px para el editor. La página crece según el alto completo de la imagen; no hay una barra de desplazamiento dentro del dibujo. Se recorre con el desplazamiento normal de la página, también arrastrando el fondo. Las figuras nuevas se agregan en el tramo visible. Los gestos siguen cambiando el tamaño de los símbolos.
+La navegación inferior permite pasar entre Encabezado, Estaciones, Gráfico y Croquis. Vista previa, Excel, PDF e Instalar quedan en una fila compacta. Los campos usan letra de 16 px y los registros de estaciones se muestran como tarjetas. Los controles de la pantalla de dibujo tienen zonas de toque de al menos 44 px.
 
-Los dos casos conservan dibujos independientes por hoja. Se incluyen las 18 figuras oficiales del reverso, con sus mismos píxeles y colores. El zoom y los controles del editor no se exportan.
+## Símbolos y zoom en teléfono
+
+1. En Gráfico, elegí el caso. Abrí **Abrir dibujo a pantalla completa**, **Editar dibujo** junto a una estación, o tocá directamente su miniatura.
+2. **Mover y zoom**: un dedo recorre la carretera; dos dedos acercan o alejan la vista. El zoom se mantiene en el punto bajo los dedos y no modifica el tamaño ni la posición guardados de los símbolos. También se puede acercar con doble toque.
+3. **＋ Agregar**: abre la lista de las 18 figuras originales. Al elegir una, la lista se cierra y se activa **Símbolo**.
+4. **Símbolo**: un dedo selecciona y arrastra la figura; dos dedos la agrandan o achican. La flecha circular permite girarla. Para acercar la vista, volvé a **Mover y zoom**.
+5. **☰** reúne Ver todo, Ancho de trabajo, botones de zoom, cambio de tamaño, giro, Duplicar, Eliminar y Deshacer. Las herramientas se despliegan sobre el dibujo y se cierran cuando no hacen falta.
+6. En el Caso 2, el selector de la parte superior cambia de estación sin salir del editor. **←** vuelve al inventario; los cambios del símbolo se guardan automáticamente.
+
+El área de agarre incluye un margen alrededor de las líneas finas. Los controles del símbolo conservan su tamaño en pantalla al acercar la vista. Un gesto completo ocupa un paso de Deshacer; mover la cámara no agrega pasos. Cancelar un gesto restaura el estado anterior y libera los punteros.
+
+Los símbolos girados pueden llegar a los extremos del recuadro: se limita su contorno visible, sin reservar espacio para el rectángulo anterior al giro. Las posiciones se conservan en el borrador, Excel y PDF. En el Caso 2, las alcantarillas existentes y nuevas se agregan centradas entre las líneas de la calzada. Su ancho inicial abarca la vía y el alto se adapta al renglón; las dimensiones en metros no se convierten en escala del dibujo. Los símbolos ya guardados mantienen sus ajustes.
+
+El Caso 1 conserva el tamaño de trabajo de la carretera en la página principal. En teléfono, esa vista es una miniatura que abre el editor al tocarla; recorrer la página no mueve los símbolos. Dentro del editor se puede usar **Ver todo** para ver la ruta completa o **Ancho de trabajo** para continuar dibujando. Girar el teléfono ajusta la vista sin cambiar las figuras.
+
+Los dos casos conservan dibujos independientes por hoja. Se incluyen las 18 figuras oficiales del reverso, con sus mismos píxeles y colores. El zoom, la posición de la cámara y los controles no se exportan. En computadora también se conserva el editor de la página principal.
 
 ## Croquis y observaciones
 
-El croquis tiene una pantalla propia con Lápiz negro, Borrador parcial, Mover lienzo, tamaño, Deshacer, Rehacer, Limpiar y zoom. El papel blanco conserva las proporciones del espacio oficial. Girar el teléfono ajusta el tamaño visible sin modificar los trazos. El área gris delimita el papel; con zoom se puede recorrer el dibujo con Mover lienzo. Volver a la app conserva el dibujo de esa hoja.
+Al abrir el croquis, el papel blanco ocupa toda la pantalla disponible. No hay encabezado ni barras fijas. El acceso flotante **☰** abre las herramientas y **Volver a la app**. Elegir Lápiz, Borrador o Mover lienzo cierra el menú; también se puede cerrar con **Volver al dibujo**. El navegador entra en pantalla completa si lo permite, y sale al regresar a la app.
+
+El papel conserva las proporciones del espacio oficial, sin estirar los trazos. **Llenar pantalla** aprovecha toda el área; **Mover lienzo** permite recorrer el papel si queda una parte fuera de la vista. **Ver hoja completa** muestra el papel entero. Ambos controles y el zoom están dentro del menú. Girar el teléfono mantiene el dibujo, el zoom y el centro de trabajo. Las opciones Deshacer, Rehacer, tamaño y Limpiar siguen disponibles dentro de ☰.
 
 Las observaciones generales del reverso son independientes de las observaciones por estación. Se escriben en la pestaña principal, fuera de la pantalla de dibujo. El texto se ajusta a los ocho renglones B35:AD42 y se exporta en Arial 12 negro, sin reducir su tamaño. Si supera el espacio o contiene un carácter no admitido, la app lo indica y permite corregirlo antes de descargar. Los borradores anteriores se recuperan con este campo vacío.
 
@@ -53,7 +64,7 @@ La carpeta publicable es **dist/**. Reemplazá su contenido completo en la carpe
 
 Los archivos de desarrollo, pruebas, Dart y ejemplos quedan fuera de la carpeta pública. Para subir por la interfaz de GitHub, seleccioná solo los archivos de la versión web; `dist/` contiene menos de 100 archivos. Con Git no existe ese límite de selección por carga.
 
-La PWA actualiza su caché a 0.6.3. Cerrá y volvé a abrir la app o recargá con conexión después de reemplazar los archivos. Se mantiene la misma clave local del borrador. Cambiar de navegador, dominio o puerto crea un espacio de datos distinto.
+La PWA actualiza su caché a 0.8.0. Cerrá y volvé a abrir la app o recargá con conexión después de reemplazar los archivos. Se mantiene la misma clave local del borrador. Cambiar de navegador, dominio o puerto crea un espacio de datos distinto.
 
 ## Plantilla y datos
 
@@ -72,7 +83,7 @@ Código estático ES modules, sin servicios externos para guardar o exportar. De
 npm test
 ```
 
-Las pruebas cubren captura y estaciones, hojas y recuperación del borrador, geometría y giros, gestos con dos punteros, selección de líneas finas, cancelación y Deshacer, dibujo y regreso del croquis, observaciones por hoja, contenido/estilos BIFF8, configuración de impresión y recursos sin conexión.
+Las pruebas cubren captura y estaciones, hojas y recuperación del borrador, geometría y giros, gestos de cámara y de símbolos con dos punteros, zoom centrado, pantallas vertical y horizontal, selección de líneas finas, cancelación y Deshacer, dibujo y regreso del croquis, observaciones por hoja, contenido/estilos BIFF8, configuración de impresión y recursos sin conexión.
 
 Para regenerar el ejemplo del reverso:
 

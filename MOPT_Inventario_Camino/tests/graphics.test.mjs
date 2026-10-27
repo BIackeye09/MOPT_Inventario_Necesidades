@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFile,readdir} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {createInventory,addSheet,toBackup,fromBackup} from '../dist/js/model.js';
-import {SYMBOLS,symbolUrl,createGraphic,graphicPlacements,loadGraphicAssets,removeStationGraphics,GRAPH_FRAME,constrainGraphic,graphicBounds,stationFrame,graphicAssetKey,exportGraphic} from '../dist/js/graphics-model.js';
+import {SYMBOLS,symbolUrl,createGraphic,graphicPlacements,loadGraphicAssets,removeStationGraphics,GRAPH_FRAME,GRAPH_ROAD_BOUNDS,constrainGraphic,graphicBounds,stationFrame,graphicAssetKey,exportGraphic,fitGraphicView,zoomGraphicView,constrainGraphicView} from '../dist/js/graphics-model.js';
 import {rotateExamplePng} from '../scripts/rotar_simbolos.mjs';
 import {documentValues,makeExcel,makePdf,documentFilename} from '../dist/js/documents.js';
 import {readContainer,readRecords} from '../dist/js/excel-template.js';
@@ -15,6 +15,20 @@ const pdf=await readFile(new URL('../dist/templates/DPA-301-original.pdf',import
 const catalog=JSON.parse(await readFile(new URL('../dist/data/caminos.json',import.meta.url),'utf8'));
 const station=(id,km)=>({id,station:km,diameter:'',culvertLength:'',headwallNumber:'',headwallType:'',observations:''});
 const assetReader=async url=>Buffer.from(await (await fetch(url)).arrayBuffer());
+test('la cámara conserva proporciones en vertical y horizontal y mantiene el punto bajo los dedos al acercar',()=>{
+  const bounds={x:-23,y:0,width:113.077,height:440.922};
+  for(const [width,height]of [[390,700],[844,260]]) {
+    const view=fitGraphicView(bounds,width,height);
+    assert.ok(view.x<=bounds.x&&view.y<=bounds.y&&view.x+view.width>=bounds.x+bounds.width-1e-8&&view.y+view.height>=bounds.y+bounds.height-1e-8);
+    assert.ok(Math.abs(view.width/view.height-width/height)<1e-8);
+    const anchor={x:view.x+view.width*.3,y:view.y+view.height*.7},zoom=zoomGraphicView(view,2.5,anchor);
+    assert.ok(Math.abs((anchor.x-zoom.x)/zoom.width-.3)<1e-8);assert.ok(Math.abs((anchor.y-zoom.y)/zoom.height-.7)<1e-8);
+    const back=zoomGraphicView(zoom,1/2.5,anchor);for(const key of ['x','y','width','height'])assert.ok(Math.abs(view[key]-back[key])<1e-8);
+    const atEdge=constrainGraphicView({...zoom,x:9999,y:-9999},bounds);
+    if(atEdge.width<bounds.width)assert.ok(atEdge.x>=bounds.x&&atEdge.x+atEdge.width<=bounds.x+bounds.width+1e-8);
+    if(atEdge.height<bounds.height)assert.ok(atEdge.y>=bounds.y&&atEdge.y+atEdge.height<=bounds.y+bounds.height+1e-8);
+  }
+});
 function drawingStreams(file) {
   const records=readRecords(readContainer(file).workbook),group=[],sheets=[];let sheet=-1,inGroup=false;
   for(const r of records) {
@@ -171,4 +185,52 @@ test('el proyecto completo queda por debajo de 100 archivos para una sola carga 
   assert.ok(all.length<100,`El paquete completo contiene ${all.length} archivos.`);
   assert.ok(all.some(file=>file.pathname.endsWith('/dist/templates/DPA-301-original.xls')));
   assert.ok(all.some(file=>file.pathname.endsWith('/dist/templates/DPA-301-original.pdf')));
+});
+
+test('las alcantarillas nuevas del Caso 2 abarcan la calzada en las 26 filas y los demás símbolos mantienen su tamaño',()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=Array.from({length:26},(_,i)=>station(`s${i}`,String(i)));
+  for(const s of sheet.stations)for(const symbolId of ['alcantarilla-existente','alcantarilla-nueva']) {
+    const height=stationFrame(sheet.stations,s.id).height,item=createGraphic(symbolId,{stationId:s.id,frameHeight:height});
+    assert.ok(Math.abs(item.x*GRAPH_FRAME.width-GRAPH_ROAD_BOUNDS.left)<1e-6);
+    assert.ok(Math.abs((item.x+item.width)*GRAPH_FRAME.width-GRAPH_ROAD_BOUNDS.right)<1e-6);
+    assert.ok(item.y>=0&&item.y+item.height<=1);
+    sheet.graphics.station.push(item);
+  }
+  const before=structuredClone(sheet.graphics.station);
+  assert.deepEqual(fromBackup(toBackup(inv),catalog).sheets[0].graphics.station,before);
+  assert.ok(Math.abs(createGraphic('alcantarilla-existente').width*GRAPH_FRAME.width-22)<1e-6);
+  assert.ok(Math.abs(createGraphic('alcantarilla-nueva').width*GRAPH_FRAME.width-22)<1e-6);
+  assert.ok(createGraphic('poste-electrico',{stationId:'s0',frameHeight:15.386}).width*GRAPH_FRAME.width<22);
+  // Un dibujo guardado con tamaño manual no vuelve a ajustarse al abrirlo.
+  sheet.graphics.station[0]=constrainGraphic(sheet.graphics.station[0],{width:.12,height:.2,x:.1,y:.4},stationFrame(sheet.stations,'s0').height);
+  assert.deepEqual(fromBackup(toBackup(inv),catalog).sheets[0].graphics.station,sheet.graphics.station);
+});
+
+test('el contorno girado llega a ambos bordes en los dos casos y se recupera aunque el rectángulo original quede fuera',()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=[station('s0','0')];
+  for(const mode of ['free','station']) {
+    const height=mode==='free'?GRAPH_FRAME.height:stationFrame(sheet.stations,'s0').height;
+    const base=createGraphic('alcantarilla-nueva',{...(mode==='station'?{stationId:'s0'}:{}),frameHeight:height});
+    const left=constrainGraphic(base,{rotation:90,x:-999},height),right=constrainGraphic({...base,id:base.id+'-right'},{rotation:90,x:999},height);
+    assert.ok(left.x<0,'El ancla invisible ya no bloquea el borde izquierdo.');
+    assert.ok(right.x+right.width>1,'El ancla invisible ya no bloquea el borde derecho.');
+    assert.ok(Math.abs(graphicBounds(left,height).x)<1e-7);
+    const box=graphicBounds(right,height);assert.ok(Math.abs(box.x+box.width-1)<1e-7);
+    sheet.graphics[mode]=[left,right];
+  }
+  assert.deepEqual(fromBackup(toBackup(inv),catalog).sheets[0].graphics,sheet.graphics);
+  const bad=JSON.parse(toBackup(inv));bad.inventory.sheets[0].graphics.free[0].x-=.01;
+  assert.throws(()=>fromBackup(bad,catalog),/fuera de su recuadro/);
+});
+
+test('los símbolos girados en los extremos se exportan completos con las anclas del XLS dentro de la plantilla',async()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];
+  sheet.graphics.free=[-999,999].map((x,i)=>constrainGraphic(createGraphic('alcantarilla-nueva',{y:(i+1)/3}),{rotation:90,x}));
+  const values=documentValues(inv),assets=await loadGraphicAssets(values.graphics,assetReader,rotateExamplePng),d=drawingStreams(makeExcel(template,values,assets));
+  const anchors=officeArtRecords(d.sheets[0]).filter(n=>n.type===0xf010).slice(-2);
+  assert.equal(d.sheets[0].readUInt16LE(anchors[0].data+2),3);assert.equal(d.sheets[0].readUInt16LE(anchors[0].data+4),0);
+  assert.equal(d.sheets[0].readUInt16LE(anchors[1].data+10),9);assert.equal(d.sheets[0].readUInt16LE(anchors[1].data+12),0);
+  for(const item of values.graphics){const box=exportGraphic(item);assert.ok(box.x>=-1e-6&&box.x+box.width<=GRAPH_FRAME.width+1e-6);}
+  assert.equal((await PDFDocument.load(await makePdf(pdf,values,assets))).getPageCount(),2);
+  assert.deepEqual(d.sheets[1],drawingStreams(template).sheets[1]);
 });

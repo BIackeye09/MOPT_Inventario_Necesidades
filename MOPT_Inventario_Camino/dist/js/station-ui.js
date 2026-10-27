@@ -48,7 +48,7 @@ export function setupStations({getInventory,commit,notify,confirmAction,nextShee
     $('station-empty').hidden=records.length>0;
     $('station-table-wrap').hidden=records.length===0;
     $('station-list').innerHTML=records.map((record,index)=>({record,index})).reverse().map(({record:r,index})=>
-      `<tr><th scope="row"><strong>${esc(formatStation(r.station))}</strong><small>${index+1} desde abajo</small></th><td>${esc(formatMetres(r.diameter))||'—'}</td><td>${esc(formatMetres(r.culvertLength))||'—'}</td><td>${esc(r.headwallNumber)||'—'}</td><td>${esc(r.headwallType)||'—'}</td><td class="station-description">${esc(r.observations)||'—'}</td><td class="station-row-actions"><button type="button" class="text-button" data-edit-station="${esc(r.id)}" aria-label="Editar estación ${esc(formatStation(r.station))}">Editar</button><button type="button" class="text-button" data-delete-station="${esc(r.id)}" aria-label="Eliminar estación ${esc(formatStation(r.station))}">Eliminar</button></td></tr>`).join('');
+      `<tr><th scope="row"><strong>${esc(formatStation(r.station))}</strong><small>${index+1} desde abajo</small></th><td data-label="Diámetro">${esc(formatMetres(r.diameter))||'—'}</td><td data-label="Longitud">${esc(formatMetres(r.culvertLength))||'—'}</td><td data-label="N.º de cabezales">${esc(r.headwallNumber)||'—'}</td><td data-label="Tipo de cabezal">${esc(r.headwallType)||'—'}</td><td class="station-description" data-label="Observaciones">${esc(r.observations)||'—'}</td><td class="station-row-actions"><button type="button" class="text-button" data-edit-station="${esc(r.id)}" aria-label="Editar estación ${esc(formatStation(r.station))}">Editar</button><button type="button" class="text-button" data-delete-station="${esc(r.id)}" aria-label="Eliminar estación ${esc(formatStation(r.station))}">Eliminar</button></td></tr>`).join('');
   }
   $('station-km').addEventListener('input',formatHint);
   $('station-form').addEventListener('input',clearError);
@@ -102,6 +102,11 @@ export function setupEditorTabs({onSelect=()=>{}}={}) {
       $(button.getAttribute('aria-controls')).hidden=!active;
     }
     onSelect(tab.dataset.editorTab);
+    // La navegación inferior del teléfono lleva directamente a la sección,
+    // aunque se venga de una lista larga o del final de la carretera.
+    if(globalThis.matchMedia?.('(max-width: 700px), (max-height: 500px) and (max-width: 1000px)').matches) {
+      requestAnimationFrame(()=>$(tab.getAttribute('aria-controls')).scrollIntoView({block:'start',behavior:'auto'}));
+    }
   }
   tabs.forEach((tab,index)=>{
     tab.addEventListener('click',()=>select(tab));

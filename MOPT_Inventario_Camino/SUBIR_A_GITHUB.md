@@ -1,6 +1,6 @@
 # Subir el inventario completo a GitHub
 
-Versión 0.6.3 · 26 de octubre de 2026.
+Versión 0.8.0 · 27 de octubre de 2026.
 
 El paquete completo contiene **97 archivos**. Los dos casos de representación gráfica, el croquis, Excel, PDF, las fuentes, las pruebas, los ejemplos y el servidor Dart están incluidos. Los símbolos y sus datos se agruparon en `dist/js/symbol-catalog.js`; sus imágenes conservan exactamente los bytes originales.
 
@@ -8,11 +8,11 @@ GitHub permite cargar hasta 100 archivos **por subida desde el navegador**. Ese 
 
 ## Opción 1: una sola subida
 
-1. Descomprimí `MOPT_Inventario_Camino_v0.6.3.zip`.
+1. Descomprimí `MOPT_Inventario_Camino_v0.8.0.zip`.
 2. Entrá a la carpeta `MOPT_Inventario_Camino` que queda dentro.
 3. En la raíz de tu repositorio, elegí **Add file → Upload files**.
 4. Arrastrá el contenido de esa carpeta, conservando los nombres y las carpetas. No arrastrés el ZIP ni agregués otra carpeta exterior con el nombre del proyecto.
-5. Escribí un mensaje como `Actualizar inventario a 0.6.3` y guardá los cambios.
+5. Escribí un mensaje como `Actualizar inventario a 0.8.0` y guardá los cambios.
 
 ## Opción 2: tres cargas pequeñas
 
@@ -41,11 +41,13 @@ Para que el repositorio también quede con menos de 100 archivos:
 4. Volvé a la raíz y subí la carpeta nueva `dist/symbols/`, que contiene solamente `carretera.png`.
 5. Revisá que estén las carpetas `dist/js/`, `dist/templates/` y `dist/vendor/`, y luego integrá la rama a la que usa tu publicación.
 
+Si tu repositorio ya contiene una carpeta exterior `MOPT_Inventario_Camino`, reemplazá `dist/` dentro de esa carpeta. Para GitHub Actions, la ruta de publicación en ese caso es `MOPT_Inventario_Camino/dist`.
+
 La publicación continúa usando el contenido de `dist/`. Conservá tu configuración actual de GitHub Pages, Actions o Cloudflare; este cambio no requiere cambiar su ruta. Si copiás el contenido de `dist/` a otra carpeta publicable, aplicá la misma limpieza dentro de su carpeta `symbols/`.
 
 ## Comprobación
 
-Abrí la web, recargá con conexión y verificá que al pie aparezca **0.6.3**. Probá ambos casos de símbolos, el croquis, Vista previa, Descargar Excel y Descargar PDF. El borrador sigue guardado en el mismo navegador y dirección.
+Abrí la web, recargá con conexión y verificá que al pie aparezca **0.8.0**. Probá ambos casos de símbolos, el croquis, Vista previa, Descargar Excel y Descargar PDF. El borrador sigue guardado en el mismo navegador y dirección.
 
 ## Fuentes oficiales
 

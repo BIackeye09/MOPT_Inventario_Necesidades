@@ -4,13 +4,13 @@ import assert from 'node:assert/strict';
 import {setupGraphics} from '../dist/js/graphics-ui.js';
 import {createInventory} from '../dist/js/model.js';
 import {GRAPH_FRAME,graphicPlacements} from '../dist/js/graphics-model.js';
-function screen() {
+function screen({phone=false}={}) {
   const inventory=createInventory(),nodes=new Map();let svgRows=[],ui,commits=0;
   inventory.sheets[0].stations=['0,0','1,25','4,9'].map((station,i)=>({id:`s${i}`,station,observations:''}));
   function node(id) {
     if(!nodes.has(id)) {
-      let html='';const value={dataset:{},value:'100',hidden:false,disabled:false,textContent:'',events:{},captures:new Set(),scrollTop:600,clientHeight:300,scrollHeight:1000,
-        addEventListener(name,fn){this.events[name]=fn;},setAttribute(name,v){this[name]=String(v);},focus(){},
+      let html='';const value={id,dataset:{},value:'100',hidden:false,disabled:false,textContent:'',events:{},captures:new Set(),scrollTop:600,clientHeight:300,scrollHeight:1000,
+        addEventListener(name,fn){this.events[name]=fn;},setAttribute(name,v){this[name]=String(v);},getAttribute(name){return this[name]??null;},focus(){},showModal(){this.open=true;},close(){this.open=false;this.events.close?.();},
         getBoundingClientRect(){return {height:1000,width:440};},getScreenCTM(){return {inverse(){return {};}};},
         setPointerCapture(id){this.captures.add(id);},hasPointerCapture(id){return this.captures.has(id);},releasePointerCapture(id){this.captures.delete(id);},style:{}};
       Object.defineProperty(value,'innerHTML',{get:()=>html,set:text=>{html=text;if(id==='station-graphic-list')svgRows=[...text.matchAll(/data-station-id="([^"]+)"/g)].map(m=>{const svg=node(`svg-${m[1]}`);svg.dataset.stationId=m[1];return svg;});}});
@@ -18,18 +18,19 @@ function screen() {
     }
     return nodes.get(id);
   }
-  globalThis.document={getElementById:node,querySelectorAll:()=>svgRows};
+  globalThis.document={getElementById:node,querySelectorAll:()=>svgRows,body:{classList:{add(){},remove(){}}}};
   globalThis.requestAnimationFrame=fn=>fn();
+  globalThis.matchMedia=()=>({matches:phone});
   globalThis.DOMPoint=class {constructor(x,y){this.x=x;this.y=y;}matrixTransform(m){return {x:this.x*(m.a??1)+(m.e??0),y:this.y*(m.d??1)+(m.f??0)};}};
   ui=setupGraphics({getInventory:()=>inventory,commit(){commits++;ui?.refresh();},notify(){},selectStations(){}});
   const click=id=>node(id).events.click();
   const add=id=>node('graphic-palette').events.click({target:{closest:()=>({dataset:{addSymbol:id}})}});
   const lastPoints=new Map();
-  function pointer(type,{id,x,y,handle,stationId,pointerId=1,pointerType='mouse'}={}) {
+  function pointer(type,{id,x,y,handle,stationId,pointerId=1,pointerType='mouse',focus=false}={}) {
     const last=lastPoints.get(pointerId)||{x:0,y:0};x??=last.x;y??=last.y;lastPoints.set(pointerId,{x,y});
-    const svg=node(stationId?`svg-${stationId}`:'graphic-free-canvas');
+    const svg=node(focus?'graphic-focus-canvas':stationId?`svg-${stationId}`:'graphic-free-canvas');
     const event={button:0,pointerId,pointerType,clientX:x,clientY:y,preventDefault(){},target:{dataset:{handle},closest(selector){return selector.startsWith('svg')?svg:id?{dataset:{graphicId:id}}:null;}}};
-    node('panel-graphics').events[type](event);
+    node(focus?'graphic-focus-dialog':'panel-graphics').events[type](event);
   }
   return {node,inventory,ui,click,add,pointer,get commits(){return commits;}};
 }
@@ -39,6 +40,80 @@ test('el editor completo agrega, agranda, duplica, elimina y deshace sin alterar
   s.click('graphic-duplicate');assert.equal(sheet.graphics.free.length,2);
   s.click('graphic-delete');assert.equal(sheet.graphics.free.length,1);s.click('graphic-undo');assert.equal(sheet.graphics.free.length,2);
   assert.equal(sheet.stations.length,3);assert.ok(s.commits>=4);
+});
+
+test('Mover y zoom usa dos dedos para la cámara y nunca cambia el símbolo ni agrega pasos de Deshacer',()=>{
+  const s=screen(),sheet=s.inventory.sheets[0];s.add('alcantarilla-nueva');const before=structuredClone(sheet.graphics),commits=s.commits;
+  s.node('graphic-focus-canvas').getBoundingClientRect=()=>({left:0,top:0,width:390,height:650});
+  s.click('graphic-open-full');s.click('graphic-focus-fit');
+  const box=()=>s.node('graphic-focus-canvas').getAttribute('viewBox').split(' ').map(Number),start=box();
+  const touch=(type,pointerId,x,y)=>s.pointer(type,{focus:true,pointerType:'touch',pointerId,x,y});
+  touch('pointerdown',1,150,300);touch('pointerdown',2,200,300);touch('pointermove',1,125,300);touch('pointermove',2,225,300);
+  assert.ok(Math.abs(box()[2]-start[2]/2)<1e-7);assert.equal(s.node('graphic-focus-zoom').textContent,'200%');
+  assert.deepEqual(sheet.graphics,before);assert.equal(s.commits,commits);
+  touch('pointerup',2,225,300);const pinned=box();touch('pointermove',1,125,350);touch('pointerup',1,125,350);
+  assert.notEqual(box()[1],pinned[1]);assert.deepEqual(sheet.graphics,before);assert.equal(s.commits,commits);
+  s.click('graphic-focus-close');assert.equal(s.node('graphic-focus-dialog').open,false);assert.deepEqual(sheet.graphics,before);
+});
+
+test('Símbolo cambia el tamaño con dos dedos sin cambiar el zoom y permite deshacer desde su menú',()=>{
+  const s=screen(),sheet=s.inventory.sheets[0];s.add('alcantarilla-nueva');s.click('graphic-open-full');s.click('graphic-focus-symbol');
+  const item=sheet.graphics.free[0],before={...item},view=s.node('graphic-focus-canvas').getAttribute('viewBox');
+  const cx=(item.x+item.width/2)*GRAPH_FRAME.width,cy=(item.y+item.height/2)*GRAPH_FRAME.height;
+  const touch=(type,pointerId,x,y,id)=>s.pointer(type,{focus:true,pointerType:'touch',pointerId,x,y,id});
+  touch('pointerdown',1,cx-2,cy,item.id);touch('pointerdown',2,cx+2,cy);touch('pointermove',1,cx-3,cy);touch('pointermove',2,cx+3,cy);
+  touch('pointerup',2,cx+3,cy);touch('pointerup',1,cx-3,cy);
+  assert.ok(Math.abs(item.width-before.width*1.5)<1e-8);assert.equal(s.node('graphic-focus-canvas').getAttribute('viewBox'),view);
+  s.click('graphic-focus-undo');assert.deepEqual(sheet.graphics.free[0],before);
+});
+
+test('el editor por estación cambia de fila sin salir y la paleta agrega solamente en la estación activa',()=>{
+  const s=screen(),sheet=s.inventory.sheets[0];s.add('bacheo');const free=structuredClone(sheet.graphics.free);s.click('graphic-case-station');
+  s.node('station-graphic-list').events.click({target:{closest:()=>({dataset:{openStationEditor:'s1'}})}});
+  assert.equal(s.node('graphic-focus-canvas').dataset.stationId,'s1');assert.equal(s.node('graphic-focus-dialog').open,true);
+  s.click('graphic-focus-add');assert.equal(s.node('graphic-focus-palette').hidden,false);
+  const add=id=>s.node('graphic-focus-symbols').events.click({target:{closest:()=>({dataset:{focusSymbol:id}})}});
+  add('alcantarilla-existente');assert.equal(s.node('graphic-focus-palette').hidden,true);
+  assert.equal(sheet.graphics.station[0].stationId,'s1');assert.equal(s.node('graphic-focus-symbol')['aria-pressed'],'true');
+  s.node('graphic-focus-station').events.change({target:{value:'s2'}});add('poste-electrico');
+  assert.equal(s.node('graphic-focus-canvas').dataset.stationId,'s2');assert.equal(sheet.graphics.station[1].stationId,'s2');assert.deepEqual(sheet.graphics.free,free);
+});
+
+test('cancelar el zoom restaura toda la vista y libera ambos dedos sin modificar el inventario',()=>{
+  const s=screen();s.add('bacheo');s.click('graphic-open-full');const before=structuredClone(s.inventory),view=s.node('graphic-focus-canvas').getAttribute('viewBox');
+  s.pointer('pointerdown',{focus:true,pointerType:'touch',pointerId:1,x:100,y:200});s.pointer('pointerdown',{focus:true,pointerType:'touch',pointerId:2,x:150,y:200});
+  s.pointer('pointermove',{focus:true,pointerType:'touch',pointerId:2,x:250,y:220});s.pointer('pointercancel',{focus:true,pointerType:'touch',pointerId:1});
+  assert.equal(s.node('graphic-focus-canvas').getAttribute('viewBox'),view);assert.equal(s.node('graphic-focus-canvas').captures.size,0);assert.deepEqual(s.inventory,before);
+});
+
+test('en teléfono tocar la miniatura abre el editor y arrastrar sobre ella no modifica símbolos',()=>{
+  const s=screen({phone:true});s.add('bacheo');const before=structuredClone(s.inventory.sheets[0].graphics),item=before.free[0];
+  s.pointer('pointerdown',{id:item.id,x:20,y:200});s.pointer('pointermove',{id:item.id,x:50,y:240});s.pointer('pointerup',{id:item.id});
+  assert.deepEqual(s.inventory.sheets[0].graphics,before);
+  s.node('panel-graphics').events.click({preventDefault(){},target:{closest:()=>s.node('graphic-free-canvas')}});
+  assert.equal(s.node('graphic-focus-dialog').open,true);assert.deepEqual(s.inventory.sheets[0].graphics,before);
+});
+
+test('el ancho de trabajo aprovecha el teléfono vertical y horizontal y el zoom tiene un límite estable',()=>{
+  for(const [width,height]of [[390,700],[844,258]]) {
+    const s=screen();s.node('graphic-focus-canvas').getBoundingClientRect=()=>({left:0,top:0,width,height});s.click('graphic-open-full');
+    const view=s.node('graphic-focus-canvas').getAttribute('viewBox').split(' ').map(Number);
+    assert.ok(Math.abs(view[2]-113.077)<1e-7);assert.ok(Math.abs(view[2]/view[3]-width/height)<1e-7);
+    s.click('graphic-focus-fit');
+    s.pointer('pointerdown',{focus:true,pointerType:'touch',pointerId:1,x:100,y:100});s.pointer('pointerdown',{focus:true,pointerType:'touch',pointerId:2,x:101,y:100});
+    s.pointer('pointermove',{focus:true,pointerType:'touch',pointerId:2,x:10000,y:100});
+    assert.equal(s.node('graphic-focus-zoom').textContent,'1600%');
+    s.pointer('pointerup',{focus:true,pointerId:2});s.pointer('pointerup',{focus:true,pointerId:1});
+    assert.equal(s.inventory.sheets[0].graphics.free.length,0);
+  }
+});
+
+test('abrir el dibujo sin una selección centra el trabajo guardado para que no haya que buscarlo',()=>{
+  const s=screen();s.add('bacheo');s.pointer('pointerdown',{x:0,y:0});s.pointer('pointerup',{x:0,y:0});
+  s.node('graphic-focus-canvas').getBoundingClientRect=()=>({width:844,height:258,left:0,top:0});s.click('graphic-open-full');
+  const item=s.inventory.sheets[0].graphics.free[0],center=(item.y+item.height/2)*GRAPH_FRAME.height;
+  const view=s.node('graphic-focus-canvas').getAttribute('viewBox').split(' ').map(Number);
+  assert.ok(center>=view[1]&&center<=view[1]+view[3]);
 });
 test('arrastrar y redimensionar actualiza las posiciones que reciben Excel y PDF y limita los bordes',()=>{
   const s=screen(),sheet=s.inventory.sheets[0];s.add('alcantarilla-existente');const item=sheet.graphics.free[0],original={...item};
@@ -108,15 +183,17 @@ test('cancelar el giro restaura el ángulo y el tamaño previos',()=>{
 test('dos dedos agrandan y achican proporcionalmente en ambos casos y un solo Deshacer revierte el gesto',()=>{
   for(const mode of ['free','station']) {
     const s=screen(),sheet=s.inventory.sheets[0],stationId=mode==='station'?'s1':undefined;
-    if(stationId){s.click('graphic-case-station');s.node('symbol-s1').value='alcantarilla-existente';s.node('station-graphic-list').events.click({target:{closest:()=>({dataset:{addStationSymbol:stationId}})}});}
-    else s.add('alcantarilla-existente');
+    // La figura delgada deja margen para probar la ampliación en el renglón.
+    if(stationId){s.click('graphic-case-station');s.node('symbol-s1').value='alcantarilla-nueva';s.node('station-graphic-list').events.click({target:{closest:()=>({dataset:{addStationSymbol:stationId}})}});}
+    else s.add('alcantarilla-nueva');
     const item=sheet.graphics[mode][0],before={...item},height=stationId?15.386:GRAPH_FRAME.height;
     const cx=(item.x+item.width/2)*GRAPH_FRAME.width,cy=(item.y+item.height/2)*height;
     const touch=(type,pointerId,x,y,id)=>s.pointer(type,{pointerType:'touch',pointerId,x,y,id,stationId});
     const commits=s.commits;
     touch('pointerdown',1,cx-2,cy,item.id);touch('pointerdown',2,cx+2,cy);
     touch('pointermove',1,cx-3,cy);touch('pointermove',2,cx+3,cy);
-    assert.ok(Math.abs(item.width/before.width-1.5)<1e-6);assert.ok(Math.abs(item.height/before.height-1.5)<1e-6);
+    // La altura de una línea muy fina se guarda redondeada a ocho decimales.
+    assert.ok(Math.abs(item.width-before.width*1.5)<1e-8);assert.ok(Math.abs(item.height-before.height*1.5)<1e-8);
     assert.equal(s.commits,commits);assert.equal(s.node('graphic-selected').textContent.includes('Seleccioná'),false);
     touch('pointermove',1,cx-1.5,cy);touch('pointermove',2,cx+1.5,cy);
     assert.ok(Math.abs(item.width/before.width-.75)<1e-6);
