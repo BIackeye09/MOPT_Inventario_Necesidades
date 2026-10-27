@@ -104,12 +104,12 @@ test('llenar pantalla cubre ambos formatos y ver la hoja completa conserva propo
   }
 });
 
-test('se solicita pantalla completa desde Abrir y se sale solo si la activó el croquis',async()=>{
-  const s=screen({fullscreen:'supported'});s.click('open-sketch');await Promise.resolve();
-  assert.equal(s.fullscreenCalls.enter,1);s.click('close-sketch');assert.equal(s.fullscreenCalls.exit,1);
-  const existing=screen({fullscreen:'existing'});existing.click('open-sketch');existing.click('close-sketch');
-  assert.equal(existing.fullscreenCalls.enter,0);assert.equal(existing.fullscreenCalls.exit,0);
-  const denied=screen({fullscreen:'denied'});denied.click('open-sketch');await Promise.resolve();await Promise.resolve();
-  assert.equal(denied.node('sketch-dialog').open,true);assert.equal(denied.node('sketch-menu').hidden,true);
-  denied.click('close-sketch');assert.equal(denied.fullscreenCalls.exit,0);
+test('abrir y cerrar el croquis no dispara el aviso nativo ni altera una pantalla completa existente',()=>{
+  for(const fullscreen of ['unsupported','supported','denied','existing']) {
+    const s=screen({fullscreen}),existing=document.fullscreenElement;s.click('open-sketch');
+    assert.equal(s.fullscreenCalls.enter,0);assert.equal(s.node('sketch-dialog').open,true);
+    assert.equal(s.node('sketch-menu').hidden,true);s.line();s.click('close-sketch');
+    assert.equal(s.fullscreenCalls.exit,0);assert.equal(document.fullscreenElement,existing);
+    assert.equal(s.inventory.sheets[0].sketch.strokes.length,1);
+  }
 });

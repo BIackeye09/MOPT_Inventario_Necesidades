@@ -7,7 +7,7 @@ export function setupSketch({getInventory,commit,notify,confirmAction}) {
   const canvas=$('sketch-canvas'),context=canvas.getContext('2d'),cursor=$('sketch-cursor'),viewport=$('sketch-viewport');
   canvas.width=2160;canvas.height=Math.round(canvas.width*SKETCH_FRAME.height/SKETCH_FRAME.width);
   let sheetId='',signature='',tool='pen',draft=null,internal=false,limited=false;
-  let paperMode='fill',paperWidth=0,paperHeight=0,previousViewport=null,fullscreenOwned=false;
+  let paperMode='fill',paperWidth=0,paperHeight=0,previousViewport=null;
   const sizes={pen:3,eraser:24},histories=new Map();
   const sheet=()=>getInventory().sheets.find(s=>s.id===getInventory().activeSheetId);
   const state=()=>sheet().sketch??=createSketch();
@@ -123,29 +123,12 @@ export function setupSketch({getInventory,commit,notify,confirmAction}) {
   function viewPaper(mode) {
     flush();paperMode=mode;$('sketch-zoom').value='100';$('sketch-zoom-value').textContent='100%';fitPaper();menu(false);
   }
-  function leaveFullscreen() {
-    if(fullscreenOwned&&document.fullscreenElement===document.documentElement) {
-      try{Promise.resolve(document.exitFullscreen()).catch(()=>{});}catch{}
-    }
-    fullscreenOwned=false;
-  }
-  function enterFullscreen() {
-    const root=document.documentElement;
-    if(!root?.requestFullscreen||document.fullscreenElement)return;
-    fullscreenOwned=true;
-    try {
-      // Se solicita desde el clic del usuario. Si el navegador no lo admite,
-      // el diálogo sigue ocupando todo el espacio disponible de la aplicación.
-      Promise.resolve(root.requestFullscreen({navigationUI:'hide'})).then(()=>{
-        if($('sketch-dialog').open)fitPaper();else leaveFullscreen();
-      }).catch(()=>{fullscreenOwned=false;});
-    }catch{fullscreenOwned=false;}
-  }
   function openScreen() {
     $('sketch-dialog').showModal();document.body.classList.add('drawing-open');
     menu(false);paperMode='fill';paperWidth=0;paperHeight=0;previousViewport=null;
     $('sketch-zoom').value='100';$('sketch-zoom-value').textContent='100%';
-    fitPaper();enterFullscreen();canvas.focus({preventScroll:true});
+    // Se llena la ventana de la app sin disparar el aviso nativo del navegador.
+    fitPaper();canvas.focus({preventScroll:true});
   }
   function closeScreen() {flush();$('sketch-dialog').close();}
   function undo() {
@@ -194,7 +177,7 @@ export function setupSketch({getInventory,commit,notify,confirmAction}) {
   $('sketch-fit').addEventListener('click',()=>viewPaper('fit'));$('sketch-fill').addEventListener('click',()=>viewPaper('fill'));
   $('open-sketch').addEventListener('click',openScreen);$('close-sketch').addEventListener('click',closeScreen);
   $('sketch-dialog').addEventListener('cancel',event=>{if(!$('sketch-menu').hidden){event.preventDefault();menu(false);}else flush();});
-  $('sketch-dialog').addEventListener('close',()=>{flush();menu(false);leaveFullscreen();document.body.classList.remove('drawing-open');$('open-sketch').focus({preventScroll:true});});
+  $('sketch-dialog').addEventListener('close',()=>{flush();menu(false);document.body.classList.remove('drawing-open');$('open-sketch').focus({preventScroll:true});});
   document.addEventListener?.('fullscreenchange',fitPaper);
   if(globalThis.ResizeObserver)new ResizeObserver(fitPaper).observe(viewport);
   globalThis.addEventListener?.('resize',fitPaper);

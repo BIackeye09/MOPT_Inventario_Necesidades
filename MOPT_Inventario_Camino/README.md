@@ -1,6 +1,6 @@
 # Inventario de Necesidades del Camino · MOPT
 
-Aplicación DPA-301, versión 0.8.0 · 27 de octubre de 2026.
+Aplicación DPA-301, versión 0.8.1 · 27 de octubre de 2026.
 Interfaz en español para computadora y teléfono; servidor local con Dart en el puerto **8081**.
 
 ## Uso
@@ -22,11 +22,11 @@ La navegación inferior permite pasar entre Encabezado, Estaciones, Gráfico y C
 ## Símbolos y zoom en teléfono
 
 1. En Gráfico, elegí el caso. Abrí **Abrir dibujo a pantalla completa**, **Editar dibujo** junto a una estación, o tocá directamente su miniatura.
-2. **Mover y zoom**: un dedo recorre la carretera; dos dedos acercan o alejan la vista. El zoom se mantiene en el punto bajo los dedos y no modifica el tamaño ni la posición guardados de los símbolos. También se puede acercar con doble toque.
-3. **＋ Agregar**: abre la lista de las 18 figuras originales. Al elegir una, la lista se cierra y se activa **Símbolo**.
-4. **Símbolo**: un dedo selecciona y arrastra la figura; dos dedos la agrandan o achican. La flecha circular permite girarla. Para acercar la vista, volvé a **Mover y zoom**.
-5. **☰** reúne Ver todo, Ancho de trabajo, botones de zoom, cambio de tamaño, giro, Duplicar, Eliminar y Deshacer. Las herramientas se despliegan sobre el dibujo y se cierran cuando no hacen falta.
-6. En el Caso 2, el selector de la parte superior cambia de estación sin salir del editor. **←** vuelve al inventario; los cambios del símbolo se guardan automáticamente.
+2. **Mover y zoom**: un dedo recorre la carretera; dos dedos acercan o alejan la vista. También se puede acercar con doble toque. Los símbolos quedan bloqueados, incluso al tocar una figura; sus herramientas y Agregar se deshabilitan.
+3. **Símbolo**: un dedo selecciona y arrastra la figura; dos dedos la agrandan o achican. La flecha circular permite girarla. La vista queda fija: tocar el fondo, pellizcarlo o usar la rueda no cambia el zoom ni mueve la cámara. Para acercar la vista, volvé a **Mover y zoom**.
+4. En modo **Símbolo**, **＋ Agregar** abre la lista de las 18 figuras originales. Al elegir una, la lista se cierra y continúa el mismo modo.
+5. **☰** reúne Ver todo, Ancho de trabajo, botones de zoom, cambio de tamaño, giro, Duplicar, Eliminar y Deshacer. Solo se habilitan las herramientas del modo elegido; ninguna cambia de modo automáticamente.
+6. En el Caso 2, el selector superior cambia de estación sin salir y conserva el modo elegido. **←** vuelve al inventario; los cambios del símbolo se guardan automáticamente.
 
 El área de agarre incluye un margen alrededor de las líneas finas. Los controles del símbolo conservan su tamaño en pantalla al acercar la vista. Un gesto completo ocupa un paso de Deshacer; mover la cámara no agrega pasos. Cancelar un gesto restaura el estado anterior y libera los punteros.
 
@@ -38,7 +38,7 @@ Los dos casos conservan dibujos independientes por hoja. Se incluyen las 18 figu
 
 ## Croquis y observaciones
 
-Al abrir el croquis, el papel blanco ocupa toda la pantalla disponible. No hay encabezado ni barras fijas. El acceso flotante **☰** abre las herramientas y **Volver a la app**. Elegir Lápiz, Borrador o Mover lienzo cierra el menú; también se puede cerrar con **Volver al dibujo**. El navegador entra en pantalla completa si lo permite, y sale al regresar a la app.
+Al abrir el croquis, el papel blanco ocupa toda la ventana disponible de la aplicación. No hay encabezado ni barras fijas. El acceso flotante **☰** abre las herramientas y **Volver a la app**. Elegir Lápiz, Borrador o Mover lienzo cierra el menú; también se puede cerrar con **Volver al dibujo**. Los gráficos y el croquis usan la ventana completa de la app sin activar la pantalla completa del navegador, evitando su aviso de entrada sobre el dibujo. Desde la app instalada se aprovecha su ventana sin las barras del navegador.
 
 El papel conserva las proporciones del espacio oficial, sin estirar los trazos. **Llenar pantalla** aprovecha toda el área; **Mover lienzo** permite recorrer el papel si queda una parte fuera de la vista. **Ver hoja completa** muestra el papel entero. Ambos controles y el zoom están dentro del menú. Girar el teléfono mantiene el dibujo, el zoom y el centro de trabajo. Las opciones Deshacer, Rehacer, tamaño y Limpiar siguen disponibles dentro de ☰.
 
@@ -64,7 +64,7 @@ La carpeta publicable es **dist/**. Reemplazá su contenido completo en la carpe
 
 Los archivos de desarrollo, pruebas, Dart y ejemplos quedan fuera de la carpeta pública. Para subir por la interfaz de GitHub, seleccioná solo los archivos de la versión web; `dist/` contiene menos de 100 archivos. Con Git no existe ese límite de selección por carga.
 
-La PWA actualiza su caché a 0.8.0. Cerrá y volvé a abrir la app o recargá con conexión después de reemplazar los archivos. Se mantiene la misma clave local del borrador. Cambiar de navegador, dominio o puerto crea un espacio de datos distinto.
+La PWA actualiza su caché a 0.8.1. Cerrá y volvé a abrir la app o recargá con conexión después de reemplazar los archivos. Se mantiene la misma clave local del borrador. Cambiar de navegador, dominio o puerto crea un espacio de datos distinto.
 
 ## Plantilla y datos
 

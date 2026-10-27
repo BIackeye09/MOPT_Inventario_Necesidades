@@ -12,7 +12,9 @@ const phoneLayout=()=>Boolean(globalThis.matchMedia?.('(max-width: 700px), (max-
 
 export function setupGraphics({getInventory,commit,notify,selectStations}) {
   let sheetId='',signature='',selected=null,drag=null,stationSignature='';
-  let full=null,viewDrag=null,focusFullscreen=false;
+  let full=null,viewDrag=null;
+  // El modo elegido es un bloqueo: ninguna herramienta lo cambia por su cuenta.
+  const symbolsEnabled=()=>!full||full.interaction==='symbol';
   const histories=new Map();
   const activeSheet=()=>getInventory().sheets.find(s=>s.id===getInventory().activeSheetId);
   function state(){const sheet=activeSheet();return sheet.graphics??=(createGraphics());}
@@ -74,6 +76,7 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
   function selection(id){selected=id;paintAll();}
   function changed(before) {remember(before);signature='';commit();paintAll();}
   function add(symbolId,stationId,position) {
+    if(!symbolsEnabled())return;
     if(list().length>=GRAPH_LIMIT){notify(`Este caso ya tiene ${GRAPH_LIMIT} símbolos.`);return;}
     const box=frame(stationId);if(!box)return;
     let x=.5,y=.5;
@@ -90,12 +93,14 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
     list().push(item);selected=item.id;changed(before);
   }
   function resize(factor) {
+    if(!symbolsEnabled())return;
     const item=chosen();if(!item)return;
     const width=Math.min(1,item.width*factor),height=Math.min(1,item.height*factor),before=copy(list());
     Object.assign(item,constrainGraphic(item,{width,height,x:item.x+(item.width-width)/2,y:item.y+(item.height-height)/2},frame(item.stationId).height));changed(before);
   }
   // Controles alternativos al gesto táctil y a la flecha de giro.
   function rotate(value) {
+    if(!symbolsEnabled())return;
     const item=chosen();if(!item)return;
     if(value===''||!Number.isFinite(Number(value))){controls();notify('Ingresá un ángulo en grados.');return;}
     const before=copy(list()),next=constrainGraphic(item,{rotation:Number(value)},frame(item.stationId).height);
@@ -103,11 +108,13 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
     Object.assign(item,next);changed(before);
   }
   function duplicate() {
+    if(!symbolsEnabled())return;
     const item=chosen();if(!item||list().length>=GRAPH_LIMIT)return;
     const before=copy(list()),next=constrainGraphic({...item,id:createId()},{x:item.x+.04,y:item.y+.015},frame(item.stationId).height);
     list().push(next);selected=next.id;changed(before);
   }
   function remove() {
+    if(!symbolsEnabled())return;
     if(!chosen())return;const before=copy(list());state()[mode()]=list().filter(item=>item.id!==selected);selected=null;changed(before);
   }
   function unitsPerPixel(svg,stationId) {
@@ -137,13 +144,15 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
   const isFocus=svg=>Boolean(full&&svg===$('graphic-focus-canvas'));
   function focusControls() {
     if(!full)return;
-    const item=chosen();
-    $('graphic-focus-selected').textContent=item?symbolById(item.symbolId).label:'Tocá un símbolo en el dibujo para seleccionarlo.';
-    for(const id of ['graphic-focus-smaller','graphic-focus-larger','graphic-focus-left','graphic-focus-right','graphic-focus-duplicate','graphic-focus-delete'])$(id).disabled=!item;
-    $('graphic-focus-undo').disabled=!history().length;
+    const item=chosen(),editing=full.interaction==='symbol';
+    $('graphic-focus-selected').textContent=!editing?'Símbolos bloqueados. Elegí «Símbolo» para editar.':item?symbolById(item.symbolId).label:'Tocá un símbolo en el dibujo para seleccionarlo.';
+    for(const id of ['graphic-focus-smaller','graphic-focus-larger','graphic-focus-left','graphic-focus-right','graphic-focus-duplicate','graphic-focus-delete'])$(id).disabled=!editing||!item;
+    $('graphic-focus-undo').disabled=!editing||!history().length;
+    $('graphic-focus-add').disabled=!editing;
+    for(const id of ['graphic-focus-fit','graphic-focus-working','graphic-focus-zoom-in','graphic-focus-zoom-out'])$(id).disabled=editing;
     $('graphic-focus-view').setAttribute('aria-pressed',String(full.interaction==='view'));
     $('graphic-focus-symbol').setAttribute('aria-pressed',String(full.interaction==='symbol'));
-    $('graphic-focus-hint').textContent=full.interaction==='view'?'Un dedo mueve la vista; dos dedos acercan o alejan.':'Un dedo mueve el símbolo; dos dedos cambian su tamaño.';
+    $('graphic-focus-hint').textContent=editing?'Solo símbolo: mover, tamaño y giro. Vista fija.':'Solo vista: mover y zoom. Símbolos bloqueados.';
     $('graphic-focus-zoom').textContent=`${Math.round((full.base?.width/full.box?.width||1)*100)}%`;
   }
   function focusPanels(which) {
@@ -168,7 +177,7 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
     setFocusView(zoomGraphicView({...full.base,x:center.x-full.base.width/2,y:center.y-full.base.height/2},clamp(factor,1,MAX_VIEW_ZOOM)));
   }
   function focusZoom(factor,anchor) {
-    if(!full)return;
+    if(!full||full.interaction!=='view')return;
     const current=full.base.width/full.box.width,target=clamp(current*factor,1,MAX_VIEW_ZOOM);
     setFocusView(zoomGraphicView(full.box,target/current,anchor));
   }
@@ -176,21 +185,13 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
     if(!full)return;
     abortGesture();abortView(true);full.interaction=value;focusPanels();paintAll();
   }
-  function leaveFocusFullscreen() {
-    if(focusFullscreen&&document.fullscreenElement===document.documentElement){try{Promise.resolve(document.exitFullscreen()).catch(()=>{});}catch{}}
-    focusFullscreen=false;
-  }
-  function enterFocusFullscreen() {
-    if(document.fullscreenElement||!document.documentElement?.requestFullscreen)return;
-    focusFullscreen=true;
-    try{Promise.resolve(document.documentElement.requestFullscreen({navigationUI:'hide'})).then(()=>{if(full)fitFocus();else leaveFocusFullscreen();}).catch(()=>{focusFullscreen=false;});}catch{focusFullscreen=false;}
-  }
   function openFocus(stationId) {
     stationId=mode()==='station'?(stationId||activeSheet().stations?.at(-1)?.id):undefined;
     if(mode()==='station'&&!stationId)return;
+    const interaction=full?.interaction||'view';
     abortGesture();abortView();
     if(chosen()?.stationId!==stationId)selected=null;
-    full={sheetId:activeSheet().id,mode:mode(),stationId,interaction:'view'};
+    full={sheetId:activeSheet().id,mode:mode(),stationId,interaction};
     $('graphic-focus-dialog').dataset.mode=mode();
     const svg=$('graphic-focus-canvas');svg.dataset.graphicCanvas=mode();
     if(stationId)svg.dataset.stationId=stationId;else delete svg.dataset.stationId;
@@ -206,7 +207,9 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
     const item=chosen()||list().filter(i=>!stationId||i.stationId===stationId).at(-1),last=activeSheet().stations?.at(-1),lastRow=last&&frame(last.id);
     const center=item?{x:(item.x+item.width/2)*GRAPH_FRAME.width,y:(item.y+item.height/2)*frame(stationId).height}:
       {x:GRAPH_FRAME.width/2,y:stationId?frame(stationId).height/2:lastRow?lastRow.top+lastRow.height/2:GRAPH_FRAME.height/2};
-    fitFocus('working',center);enterFocusFullscreen();svg.focus({preventScroll:true});
+    // El diálogo llena la app sin solicitar pantalla completa al navegador:
+    // esa solicitud mostraba un aviso nativo encima del dibujo al entrar.
+    fitFocus('working',center);svg.focus({preventScroll:true});
   }
   function closeFocus() {abortGesture();abortView();$('graphic-focus-dialog').close();}
   // La cámara usa coordenadas de pantalla durante todo el gesto. Así el zoom
@@ -216,21 +219,19 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
     viewDrag.start=[...viewDrag.pointers.values()].map(copy);
   }
   function startView(event,svg) {
+    if(!full||full.interaction!=='view')return;
     if(viewDrag) {
       if(viewDrag.pointers.size>=2)return;
-      viewDrag.pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});viewDrag.pinched=true;rebaseView();
+      viewDrag.pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});rebaseView();
     } else {
-      const p=point(event,svg);
-      viewDrag={svg,pointers:new Map([[event.pointerId,{x:event.clientX,y:event.clientY}]]),original:copy(full.box),
-        tap:{x:event.clientX,y:event.clientY},candidate:hitSymbol(p,svg,full.stationId)?.id,travelled:0,pinched:false};
+      viewDrag={svg,pointers:new Map([[event.pointerId,{x:event.clientX,y:event.clientY}]]),original:copy(full.box)};
       rebaseView();
     }
     focusPanels();svg.setPointerCapture(event.pointerId);event.preventDefault();
   }
   function moveView(event) {
-    if(!viewDrag?.pointers.has(event.pointerId)||!full)return false;
+    if(!viewDrag?.pointers.has(event.pointerId)||!full||full.interaction!=='view')return false;
     viewDrag.pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
-    viewDrag.travelled=Math.max(viewDrag.travelled,distance(viewDrag.tap,{x:event.clientX,y:event.clientY}));
     const points=[...viewDrag.pointers.values()],rect=viewDrag.svg.getBoundingClientRect(),width=rect.width||390,height=rect.height||650,base=viewDrag.startBox;
     let next;
     if(points.length===2) {
@@ -253,10 +254,10 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
     if(done.svg.hasPointerCapture(event.pointerId))done.svg.releasePointerCapture(event.pointerId);
     if(done.pointers.size){rebaseView();return true;}
     viewDrag=null;
-    if(!done.pinched&&done.travelled<8){selected=done.candidate||null;paintAll();}
     return true;
   }
   function undoGraphic() {
+    if(!symbolsEnabled())return;
     abortGesture();const before=history().pop();
     if(before){state()[mode()]=before;selected=null;signature='';commit();paintAll();}
   }
@@ -281,7 +282,7 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
     // En teléfono, la miniatura abre el editor; no mezcla el scroll de la
     // página con un arrastre de símbolos antes de entrar a la pantalla de trabajo.
     if(!isFocus(svg)&&phoneLayout())return;
-    if(isFocus(svg)&&(full.interaction==='view'||viewDrag)){startView(event,svg);return;}
+    if(isFocus(svg)&&full.interaction==='view'){startView(event,svg);return;}
     const p=point(event,svg);
     if(drag) {
       if(drag.svg!==svg||drag.kind==='pan'||drag.pointers.size>=2)return;
@@ -294,7 +295,8 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
     const item=hit||(group?list().find(i=>i.id===group.dataset.graphicId):null);
     if(!item) {
       selection(null);svg.focus({preventScroll:true});
-      if(isFocus(svg)){startView(event,svg);return;}
+      // En Símbolo el fondo no mueve la cámara, ni con uno ni con dos dedos.
+      if(isFocus(svg)){event.preventDefault();return;}
       const rows=$('station-graphic-list');
       // El fondo desplaza la página completa, sin encerrar la ruta en otro scroll.
       const viewport=stationId?(rows.scrollHeight>rows.clientHeight+1?rows:(document.scrollingElement||rows)):(document.scrollingElement||$('graphic-free-viewport'));
@@ -422,28 +424,28 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
   $('graphic-undo').addEventListener('click',undoGraphic);
   $('graphic-open-full').addEventListener('click',()=>openFocus());$('graphic-focus-close').addEventListener('click',closeFocus);
   $('graphic-focus-view').addEventListener('click',()=>changeFocusMode('view'));$('graphic-focus-symbol').addEventListener('click',()=>changeFocusMode('symbol'));
-  $('graphic-focus-add').addEventListener('click',()=>focusPanels($('graphic-focus-palette').hidden?'symbols':undefined));
+  $('graphic-focus-add').addEventListener('click',()=>{if(full?.interaction==='symbol')focusPanels($('graphic-focus-palette').hidden?'symbols':undefined);});
   $('graphic-focus-menu-toggle').addEventListener('click',()=>focusPanels($('graphic-focus-menu').hidden?'tools':undefined));
   $('graphic-focus-menu-close').addEventListener('click',()=>focusPanels());$('graphic-focus-palette-close').addEventListener('click',()=>focusPanels());
-  $('graphic-focus-fit').addEventListener('click',()=>{fitFocus('all');focusPanels();});
-  $('graphic-focus-working').addEventListener('click',()=>{fitFocus('working');focusPanels();});
+  $('graphic-focus-fit').addEventListener('click',()=>{if(full?.interaction==='view'){fitFocus('all');focusPanels();}});
+  $('graphic-focus-working').addEventListener('click',()=>{if(full?.interaction==='view'){fitFocus('working');focusPanels();}});
   $('graphic-focus-zoom-in').addEventListener('click',()=>focusZoom(1.4));$('graphic-focus-zoom-out').addEventListener('click',()=>focusZoom(1/1.4));
   $('graphic-focus-undo').addEventListener('click',undoGraphic);
   for(const [id,action]of [['graphic-focus-smaller',()=>resize(.85)],['graphic-focus-larger',()=>resize(1.15)],['graphic-focus-left',()=>rotate((chosen()?.rotation||0)-15)],['graphic-focus-right',()=>rotate((chosen()?.rotation||0)+15)],['graphic-focus-duplicate',duplicate],['graphic-focus-delete',remove]]) {
-    $(id).addEventListener('click',()=>{if(full)full.interaction='symbol';action();});
+    $(id).addEventListener('click',()=>{if(full?.interaction==='symbol')action();});
   }
   $('graphic-focus-symbols').innerHTML=SYMBOLS.map(s=>`<button type="button" data-focus-symbol="${s.id}"><img src="${symbolUrl(s.id)}" alt="" draggable="false"><span>${esc(s.label)}</span></button>`).join('');
   $('graphic-focus-symbols').addEventListener('click',event=>{
-    const id=event.target.closest('[data-focus-symbol]')?.dataset.focusSymbol;if(!full||!symbolById(id))return;
-    full.interaction='symbol';focusPanels();add(id,full.stationId,{x:full.box.x+full.box.width/2,y:full.box.y+full.box.height/2});
+    const id=event.target.closest('[data-focus-symbol]')?.dataset.focusSymbol;if(full?.interaction!=='symbol'||!symbolById(id))return;
+    focusPanels();add(id,full.stationId,{x:full.box.x+full.box.width/2,y:full.box.y+full.box.height/2});
   });
   $('graphic-focus-station').addEventListener('change',event=>openFocus(event.target.value));
-  $('graphic-focus-canvas').addEventListener('wheel',event=>{if(full?.interaction==='view'){event.preventDefault();focusZoom(Math.exp(-event.deltaY*.002),point(event,$('graphic-focus-canvas')));}},{passive:false});
-  $('graphic-focus-canvas').addEventListener('dblclick',event=>{if(full?.interaction==='view'){event.preventDefault();focusZoom(1.8,point(event,$('graphic-focus-canvas')));}});
+  $('graphic-focus-canvas').addEventListener('wheel',event=>{if(full){event.preventDefault();if(full.interaction==='view')focusZoom(Math.exp(-event.deltaY*.002),point(event,$('graphic-focus-canvas')));}},{passive:false});
+  $('graphic-focus-canvas').addEventListener('dblclick',event=>{if(full){event.preventDefault();if(full.interaction==='view')focusZoom(1.8,point(event,$('graphic-focus-canvas')));}});
   $('graphic-focus-dialog').addEventListener('cancel',event=>{
     if(!$('graphic-focus-menu').hidden||!$('graphic-focus-palette').hidden){event.preventDefault();focusPanels();}else{abortGesture();abortView();}
   });
-  $('graphic-focus-dialog').addEventListener('close',()=>{abortGesture();abortView();full=null;focusPanels();leaveFocusFullscreen();document.body.classList.remove('graphic-editor-open');$('tab-graphics').focus({preventScroll:true});});
+  $('graphic-focus-dialog').addEventListener('close',()=>{abortGesture();abortView();full=null;focusPanels();document.body.classList.remove('graphic-editor-open');$('tab-graphics').focus({preventScroll:true});});
   // Mantiene las zonas táctiles del mismo tamaño al girar o redimensionar la pantalla.
   if(globalThis.ResizeObserver)new ResizeObserver(()=>{if(mode()==='free'&&!drag)paint($('graphic-free-canvas'));}).observe($('graphic-free-viewport'));
   if(globalThis.ResizeObserver)new ResizeObserver(()=>{if(full){abortGesture();abortView(true);fitFocus();}}).observe($('graphic-focus-canvas'));

@@ -1,5 +1,5 @@
 INVENTARIO DE NECESIDADES DEL CAMINO · MOPT
-Versión 0.8.0 · 27/10/2026
+Versión 0.8.1 · 27/10/2026
 
 PARA INICIAR
 1. Descomprimí toda la carpeta.
@@ -16,7 +16,11 @@ CAMBIOS DE ESTA VERSIÓN
 - Editor gráfico a pantalla completa, con dos modos independientes:
   Mover y zoom: un dedo mueve la vista; dos dedos acercan o alejan.
   Símbolo: un dedo mueve una figura; dos dedos cambian su tamaño.
-- Agregar abre la lista de símbolos; ☰ reúne las herramientas adicionales.
+- Mover y zoom bloquea los símbolos y sus herramientas. Símbolo deja la
+  vista fija, incluso al arrastrar o pellizcar el fondo. No cambia solo de modo.
+- En Símbolo, Agregar abre la lista; ☰ reúne las herramientas adicionales.
+- Gráficos y croquis llenan la ventana de la app sin el aviso nativo que
+  aparecía al solicitar pantalla completa al navegador.
 - El Caso 2 permite cambiar de estación desde el selector del editor.
 - Tocar una miniatura abre el editor; recorrer la página no mueve figuras.
 - Croquis sin barras: solo papel blanco y acceso flotante al menú ☰.
@@ -62,7 +66,7 @@ Si GitHub Pages sirve docs/, copiá allí el contenido de dist/.
 El proyecto completo tiene 97 archivos y dist/ tiene 49. El resto del proyecto son
 herramientas, código de prueba y ejemplos para conservar en tu equipo.
 Después de actualizar, recargá con conexión o cerrá y abrí la app.
-La versión se muestra al final de la página: 0.8.0.
+La versión se muestra al final de la página: 0.8.1.
 
 EJEMPLOS
 En ejemplos/croquis-localizacion.xls y .pdf podés revisar el croquis y

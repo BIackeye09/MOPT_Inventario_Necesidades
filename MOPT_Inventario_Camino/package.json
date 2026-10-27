@@ -1,6 +1,6 @@
 {
   "name": "mopt-inventario-caminos",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "private": true,
   "type": "module",
   "description": "Inventario del Camino DPA-301: encabezado, estaciones, símbolos y croquis",
