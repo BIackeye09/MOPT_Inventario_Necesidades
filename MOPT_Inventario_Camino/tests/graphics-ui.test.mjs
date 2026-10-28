@@ -129,6 +129,51 @@ test('Símbolo permite mover, escalar, girar y usar el teclado manteniendo fija 
     assert.equal(s.node('graphic-focus-canvas').getAttribute('viewBox'),view,mode);
   }
 });
+
+test('el dedo estira solo el largo o el grosor, incluso girado, en ambos casos y con Deshacer',()=>{
+  for(const mode of ['free','station'])for(const rotation of [0,37,90])for(const handle of ['e','w','n','s']) {
+    const s=focusCase(mode);s.click('graphic-focus-symbol');
+    for(let i=0;i<4;i++)s.click('graphic-focus-smaller');
+    s.node('graphic-angle').events.change({target:{value:String(rotation)}});
+    const before={...s.item},view=s.node('graphic-focus-canvas').getAttribute('viewBox'),commits=s.commits;
+    const angle=rotation*Math.PI/180,c=Math.cos(angle),sin=Math.sin(angle);
+    const horizontal=handle==='e'||handle==='w',sign=handle==='w'||handle==='n'?-1:1;
+    // El movimiento perpendicular simula el temblor normal de un dedo.
+    const localX=horizontal?sign*.5:.2,localY=horizontal?.2:sign*.5;
+    const x=(before.x+before.width/2)*GRAPH_FRAME.width,y=(before.y+before.height/2)*s.height;
+    s.pointer('pointerdown',{focus:true,id:s.item.id,handle,pointerType:'touch',x,y});
+    s.pointer('pointermove',{focus:true,pointerType:'touch',x:x+localX*c-localY*sin,y:y+localX*sin+localY*c});
+    s.pointer('pointerup',{focus:true,pointerType:'touch'});
+    assert.ok(s.item[horizontal?'width':'height']>before[horizontal?'width':'height'],`${mode} ${rotation} ${handle}`);
+    assert.equal(s.item[horizontal?'height':'width'],before[horizontal?'height':'width']);
+    assert.equal(s.item.rotation,before.rotation);assert.equal(s.node('graphic-focus-canvas').getAttribute('viewBox'),view);
+    assert.equal(s.commits,commits+1);assert.doesNotThrow(()=>graphicPlacements(s.sheet));
+    s.click('graphic-focus-undo');assert.deepEqual(s.sheet.graphics[mode][0],before);
+  }
+});
+
+test('los botones de largo y grosor actúan por separado y quedan bloqueados en Mover y zoom',()=>{
+  for(const mode of ['free','station']) {
+    const s=focusCase(mode),actions=[['graphic-focus-longer','width',1],['graphic-focus-shorter','width',-1],['graphic-focus-thicker','height',1],['graphic-focus-thinner','height',-1]];
+    for(const [id,axis,sign]of actions) {
+      const locked=structuredClone(s.sheet.graphics);assert.equal(s.node(id).disabled,true);s.click(id);assert.deepEqual(s.sheet.graphics,locked);
+      s.click('graphic-focus-symbol');const current=s.sheet.graphics[mode][0];
+      const x=(current.x+current.width/2)*GRAPH_FRAME.width,y=(current.y+current.height/2)*s.height;
+      s.pointer('pointerdown',{focus:true,id:current.id,x,y});s.pointer('pointerup',{focus:true,x,y});
+      const before={...current};
+      assert.equal(s.node(id).disabled,false);s.click(id);const after=s.sheet.graphics[mode][0];
+      assert.ok((after[axis]-before[axis])*sign>0);assert.equal(after[axis==='width'?'height':'width'],before[axis==='width'?'height':'width']);
+      s.click('graphic-focus-undo');assert.deepEqual(s.sheet.graphics[mode][0],before);s.click('graphic-focus-view');
+    }
+  }
+});
+
+test('cancelar un estiramiento restaura largo y grosor y libera el dedo',()=>{
+  const s=focusCase('free');s.click('graphic-focus-symbol');const before={...s.item};
+  s.pointer('pointerdown',{focus:true,id:s.item.id,handle:'e',pointerType:'touch',x:40,y:200});
+  s.pointer('pointermove',{focus:true,pointerType:'touch',x:48,y:201});s.pointer('pointercancel',{focus:true,pointerType:'touch'});
+  assert.deepEqual(s.item,before);assert.equal(s.node('graphic-focus-canvas').captures.size,0);
+});
 test('el editor completo agrega, agranda, duplica, elimina y deshace sin alterar las estaciones',()=>{
   const s=screen(),sheet=s.inventory.sheets[0];s.add('bacheo');assert.equal(sheet.graphics.free.length,1);
   const original=structuredClone(sheet.graphics.free[0]);s.click('graphic-larger');assert.ok(sheet.graphics.free[0].width>original.width);

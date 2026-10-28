@@ -1,9 +1,9 @@
-// Edición por hoja: agregar, corregir y eliminar conserva el orden de captura.
+// Edición por hoja: orden numérico y estaciones únicas en el inventario.
 import {createId} from './ids.js';
-import {STATION_CAPACITY, stationFields, validateStation, cleanStation, formatStation, formatMetres} from './stations.js';
+import {STATION_CAPACITY, stationFields, validateStation, cleanStation, formatStation, formatMetres,validStationInput,parseStation,sortStations,findDuplicateStation,duplicateStationValues} from './stations.js';
 import {checkStationForDocument} from './documents.js';
 import {sheetLabel} from './model.js';
-import {removeStationGraphics} from './graphics-model.js';
+import {removeStationGraphics,reflowStationGraphics} from './graphics-model.js';
 const $=id=>document.getElementById(id);
 const ids={station:'station-km',diameter:'station-diameter',culvertLength:'station-length',
   headwallNumber:'station-number',headwallType:'station-type',observations:'station-observations'};
@@ -20,7 +20,11 @@ export function setupStations({getInventory,commit,notify,confirmAction,nextShee
   }
   function formatHint() {
     const value=$('station-km').value;
-    $('station-format').textContent=formatStation(value)||(value.trim()?'Usá kilómetros con hasta tres decimales.':'0 + 000');
+    $('station-format').textContent=validStationInput(value)?formatStation(value):value.trim()?'Usá una coma o punto y de 1 a 3 decimales.':'0 + 000';
+  }
+  function duplicateError(value,id) {
+    const found=findDuplicateStation(getInventory().sheets,value,{sheetId:sheet().id,stationId:id});
+    return found?`La estación ${formatStation(value)} ya existe en la hoja ${found.sheetIndex+1}. Editá ese registro o ingresá otra estación.`:'';
   }
   function fill(record={}) {
     for(const field of stationFields)$(ids[field]).value=record[field]??'';
@@ -39,12 +43,15 @@ export function setupStations({getInventory,commit,notify,confirmAction,nextShee
     const records=active.stations||[],next=JSON.stringify([active.id,records,getInventory().sheets.length]);
     $('station-sheet').textContent=sheetLabel(getInventory());
     $('station-count').textContent=`${records.length} de ${STATION_CAPACITY}`;
-    $('station-order-note').textContent=editingId?'La estación conservará su posición en el documento.':
+    $('station-order-note').textContent=editingId?'Al guardar se ordenará de menor a mayor, de abajo hacia arriba.':
       records.length===STATION_CAPACITY?'Esta hoja está completa. Continuá en otra hoja.':
-      records.length===0?'La primera estación ocupará el renglón inferior de la tabla.':`La siguiente estación irá sobre las ${records.length} ya guardadas.`;
+      records.length===0?'Orden de menor a mayor, de abajo hacia arriba. La primera ocupará el renglón inferior.':'Orden de menor a mayor, de abajo hacia arriba; cada estación se acomoda automáticamente.';
     $('station-save').disabled=saving||(!editingId&&records.length>=STATION_CAPACITY);
     $('station-next-sheet').hidden=records.length<STATION_CAPACITY;
     if(next===signature)return;signature=next;
+    const duplicates=duplicateStationValues(getInventory().sheets),repeated=[...new Set(records.filter(r=>duplicates.has(parseStation(r.station))).map(r=>formatStation(r.station)))];
+    $('station-duplicates-note').hidden=!repeated.length;
+    $('station-duplicates-note').textContent=repeated.length?`Este borrador ya tenía estaciones repetidas: ${repeated.join(', ')}. Se conservaron sus datos; editá o eliminá las repeticiones antes de continuar.`:'';
     $('station-empty').hidden=records.length>0;
     $('station-table-wrap').hidden=records.length===0;
     $('station-list').innerHTML=records.map((record,index)=>({record,index})).reverse().map(({record:r,index})=>
@@ -56,21 +63,27 @@ export function setupStations({getInventory,commit,notify,confirmAction,nextShee
   $('station-next-sheet').addEventListener('click',()=>{nextSheet();$('station-km').focus();});
   $('station-form').addEventListener('submit',async event=>{
     event.preventDefault();if(saving)return;
-    clearError();const active=sheet(),record=read(),errors=validateStation(record);
+    clearError();const active=sheet(),record=read(),saveId=editingId,errors=validateStation(record);
+    if(!errors.some(e=>e.field==='station')){const message=duplicateError(record.station,saveId);if(message)errors.push({field:'station',message});}
     if(errors.length) {
       $('station-error').textContent=errors.map(e=>e.message).join(' ');$('station-error').hidden=false;
       errors.forEach(e=>$(ids[e.field]).setAttribute('aria-invalid','true'));$(ids[errors[0].field]).focus();return;
     }
-    const records=active.stations||[],index=editingId?records.findIndex(r=>r.id===editingId):records.length;
+    const records=active.stations||[],index=saveId?records.findIndex(r=>r.id===saveId):records.length;
     if(index<0||index>=STATION_CAPACITY)return;
     saving=true;$('station-save').disabled=true;
     try {
-      await checkStationForDocument(record,index);
+      const value={id:saveId||createId(),...cleanStation(record)},candidate=records.filter(r=>r.id!==saveId);
+      candidate.push(value);const ordered=sortStations(candidate);
+      // Una inserción puede cambiar el renglón de otros textos: se comprueba
+      // toda la tabla antes de guardar la nueva distribución del documento.
+      await Promise.all(ordered.map((r,i)=>checkStationForDocument(r,i)));
       // Si se cambió de hoja mientras se comprobaba el texto, se conserva el formulario.
-      if(sheet().id!==active.id)return;
-      const value={id:editingId||createId(),...cleanStation(record)};
-      active.stations=records.slice();active.stations[index]=value;
-      const edited=Boolean(editingId);reset();commit({sheets:true});
+      if(sheet().id!==active.id||editingId!==saveId)return;
+      const duplicate=duplicateError(value.station,saveId);if(duplicate)throw new Error(duplicate);
+      if(active.stations!==records)throw new Error('La lista cambió mientras se guardaba. Revisá los datos y volvé a guardar.');
+      active.stations=ordered;reflowStationGraphics(active,records);
+      const edited=Boolean(saveId);reset();commit({sheets:true});
       notify(`Estación ${formatStation(value.station)} ${edited?'actualizada':'agregada'}.`);
       $('station-km').focus();
     } catch(error) {$('station-error').textContent=error.message;$('station-error').hidden=false;}
@@ -86,7 +99,7 @@ export function setupStations({getInventory,commit,notify,confirmAction,nextShee
       const record=records.find(r=>r.id===remove.dataset.deleteStation);if(!record)return;
       if(await confirmAction(`Eliminar estación ${formatStation(record.station)}`,'Se eliminarán también sus símbolos del caso por estación. Las estaciones restantes se acomodarán de abajo hacia arriba.','Eliminar estación')) {
         active.stations=records.filter(r=>r.id!==record.id);
-        removeStationGraphics(active,record.id);
+        removeStationGraphics(active,record.id,records);
         if(editingId===record.id)reset();commit({sheets:true});notify('Estación eliminada.');
       }
     }

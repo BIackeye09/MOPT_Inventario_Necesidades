@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFile,readdir} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {createInventory,addSheet,toBackup,fromBackup} from '../dist/js/model.js';
-import {SYMBOLS,symbolUrl,createGraphic,graphicPlacements,loadGraphicAssets,removeStationGraphics,GRAPH_FRAME,GRAPH_ROAD_BOUNDS,constrainGraphic,graphicBounds,stationFrame,graphicAssetKey,exportGraphic,fitGraphicView,zoomGraphicView,constrainGraphicView} from '../dist/js/graphics-model.js';
+import {SYMBOLS,symbolUrl,createGraphic,graphicPlacements,loadGraphicAssets,removeStationGraphics,GRAPH_FRAME,GRAPH_ROAD_BOUNDS,constrainGraphic,stretchGraphic,graphicBounds,stationFrame,graphicAssetKey,exportGraphic,fitGraphicView,zoomGraphicView,constrainGraphicView} from '../dist/js/graphics-model.js';
 import {rotateExamplePng} from '../scripts/rotar_simbolos.mjs';
 import {documentValues,makeExcel,makePdf,documentFilename} from '../dist/js/documents.js';
 import {readContainer,readRecords} from '../dist/js/excel-template.js';
@@ -15,6 +15,26 @@ const pdf=await readFile(new URL('../dist/templates/DPA-301-original.pdf',import
 const catalog=JSON.parse(await readFile(new URL('../dist/data/caminos.json',import.meta.url),'utf8'));
 const station=(id,km)=>({id,station:km,diameter:'',culvertLength:'',headwallNumber:'',headwallType:'',observations:''});
 const assetReader=async url=>Buffer.from(await (await fetch(url)).arrayBuffer());
+test('estirar hasta el límite conserva el otro eje y el contorno girado dentro del documento',()=>{
+  for(const frameHeight of [GRAPH_FRAME.height,15.386])for(const rotation of [0,37,90,143,270])for(const axis of ['width','height']) {
+    const item=constrainGraphic(createGraphic('bacheo',{frameHeight}),{width:.04,height:.04,rotation},frameHeight);
+    const result=stretchGraphic(item,axis,100,frameHeight),other=axis==='width'?'height':'width',bounds=graphicBounds(result,frameHeight);
+    assert.ok(Math.abs(result[other]-item[other])<=1e-8);
+    assert.ok(bounds.x>=-1e-7&&bounds.y>=-1e-7&&bounds.x+bounds.width<=1+1e-7&&bounds.y+bounds.height<=1+1e-7);
+  }
+});
+test('estirar con un tirador conserva el extremo opuesto en los ejes del símbolo girado',()=>{
+  for(const rotation of [0,37,90])for(const axis of ['width','height'])for(const anchor of ['start','end']) {
+    const item=constrainGraphic(createGraphic('bacheo'),{width:.1,height:.04,rotation}),result=stretchGraphic(item,axis,item[axis]*1.2,GRAPH_FRAME.height,anchor);
+    const a=rotation*Math.PI/180,sign=anchor==='start'?-1:1;
+    const fixed=value=>{
+      const cx=(value.x+value.width/2)*GRAPH_FRAME.width,cy=(value.y+value.height/2)*GRAPH_FRAME.height;
+      const extent=value[axis]*(axis==='width'?GRAPH_FRAME.width:GRAPH_FRAME.height)/2*sign;
+      return [cx+extent*(axis==='width'?Math.cos(a):-Math.sin(a)),cy+extent*(axis==='width'?Math.sin(a):Math.cos(a))];
+    };
+    const before=fixed(item),after=fixed(result);assert.ok(Math.hypot(before[0]-after[0],before[1]-after[1])<1e-5);
+  }
+});
 test('la cámara conserva proporciones en vertical y horizontal y mantiene el punto bajo los dedos al acercar',()=>{
   const bounds={x:-23,y:0,width:113.077,height:440.922};
   for(const [width,height]of [[390,700],[844,260]]) {

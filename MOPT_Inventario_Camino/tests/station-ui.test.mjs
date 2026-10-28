@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {setupStations,setupEditorTabs} from '../dist/js/station-ui.js';
 import {createInventory,addSheet} from '../dist/js/model.js';
+import {createGraphic,stationFrame,graphicPlacements} from '../dist/js/graphics-model.js';
 
 function screen() {
   const nodes=new Map();
@@ -41,9 +42,40 @@ test('un número inválido impide guardar y cambiar de hoja conserva formularios
   assert.equal(s.inventory.sheets[1].stations.length,1);assert.equal(s.inventory.sheets[0].stations.length,0);
   s.inventory.activeSheetId=s.inventory.sheets[0].id;s.ui.refresh();assert.equal(s.node('station-km').value,'4,9');assert.equal(s.node('station-number').value,'dos');
 });
+test('se exige una sola coma o punto y entre uno y tres decimales, sin guardar entradas inválidas',async()=>{
+  const s=screen();
+  for(const value of ['2','2,','2.','2,,870','2.8.7','2,8701','-2,0','2/870','2 ,870']) {
+    s.node('station-km').value=value;await s.submit();assert.equal(s.commits,0,value);
+    assert.equal(s.node('station-error').hidden,false);assert.equal(s.node('station-km').attributes['aria-invalid'],'true');
+  }
+  for(const value of ['2,870','3.86','4,9']){s.node('station-km').value=value;await s.submit();}
+  assert.equal(s.inventory.sheets[0].stations.length,3);
+});
+test('las estaciones equivalentes no se repiten al agregar, editar, cambiar de hoja ni hacer doble envío',async()=>{
+  const s=screen();s.node('station-km').value='2,870';await Promise.all([s.submit(),s.submit()]);
+  const first=s.inventory.sheets[0].stations[0];assert.equal(s.commits,1);
+  for(const value of ['2.870','02,87','2,870']){s.node('station-km').value=value;await s.submit();assert.equal(s.commits,1);assert.match(s.node('station-error').textContent,/ya existe/i);}
+  await s.click({editStation:first.id});s.node('station-km').value='2.87';await s.submit();assert.equal(s.commits,2);
+  s.node('station-km').value='2,864';await s.submit();const second=s.inventory.sheets[0].stations[0];
+  await s.click({editStation:second.id});s.node('station-km').value='2,870';await s.submit();
+  assert.equal(s.inventory.sheets[0].stations.length,2);assert.equal(s.inventory.sheets[0].stations[0].station,'2,864');
+  s.inventory.activeSheetId=s.inventory.sheets[1].id;s.ui.refresh();s.node('station-km').value='2.870';await s.submit();
+  assert.equal(s.inventory.sheets[1].stations.length,0);assert.match(s.node('station-error').textContent,/hoja 1/i);
+});
+test('agregar y editar ordena numéricamente cada hoja y conserva los detalles y símbolos de cada estación',async()=>{
+  const s=screen();
+  for(const value of ['12,01','2,870','2,864','2,9']){s.node('station-km').value=value;s.node('station-observations').value='Hallazgo '+value;await s.submit();}
+  const sheet=s.inventory.sheets[0];assert.deepEqual(sheet.stations.map(r=>r.station),['2,864','2,870','2,9','12,01']);
+  const target=sheet.stations[1];sheet.graphics.activeMode='station';sheet.graphics.station=[createGraphic('bacheo',{stationId:target.id,frameHeight:stationFrame(sheet.stations,target.id).height})];
+  const before=graphicPlacements(sheet)[0].y;
+  await s.click({editStation:target.id});s.node('station-km').value='1,0';await s.submit();
+  assert.equal(sheet.stations[0].id,target.id);assert.equal(sheet.stations[0].observations,'Hallazgo 2,870');
+  assert.equal(sheet.graphics.station[0].stationId,target.id);assert.ok(graphicPlacements(sheet)[0].y>before);
+  assert.match(s.node('station-order-note').textContent,/menor a mayor/i);
+});
 test('una hoja llena permite editar y continuar en una hoja nueva sin sobrescribir estaciones',async()=>{
   const s=screen();
-  for(let i=0;i<26;i++){s.node('station-km').value=String(i);await s.submit();}
+  for(let i=0;i<26;i++){s.node('station-km').value=`${i},0`;await s.submit();}
   assert.equal(s.inventory.sheets[0].stations.length,26);assert.equal(s.node('station-save').disabled,true);
   assert.equal(s.node('station-next-sheet').hidden,false);
   await s.click({editStation:s.inventory.sheets[0].stations[0].id});assert.equal(s.node('station-save').disabled,false);

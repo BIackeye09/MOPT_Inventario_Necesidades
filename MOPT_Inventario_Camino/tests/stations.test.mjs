@@ -3,7 +3,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createInventory,addSheet,toBackup,fromBackup} from '../dist/js/model.js';
-import {parseStation,formatStation,formatMetres,validateStation,stationRows} from '../dist/js/stations.js';
+import {parseStation,formatStation,formatMetres,validateStation,stationRows,duplicateStationValues} from '../dist/js/stations.js';
+import {createGraphic,constrainGraphic,stationFrame,graphicBounds} from '../dist/js/graphics-model.js';
 import {documentValues,makeExcel,makePdf,checkStationForDocument} from '../dist/js/documents.js';
 import {readContainer,readRecords} from '../dist/js/excel-template.js';
 import {PDFDocument} from '../dist/vendor/pdf-lib.esm.min.js';
@@ -20,16 +21,35 @@ test('los campos opcionales pueden quedar vacíos y cero es un valor real',()=>{
   assert.deepEqual(validateStation(entry('0,0')),[]);
   assert.deepEqual(validateStation(entry('4,9',{diameter:'0',culvertLength:'6,50',headwallNumber:'0',headwallType:'Libre'})),[]);
   assert.equal(formatMetres(''),'');assert.equal(formatMetres('0'),'0 m');assert.equal(formatMetres('0.80'),'0,80 m');
-  assert.equal(validateStation(entry('1',{diameter:'-2'}))[0].field,'diameter');
-  assert.equal(validateStation(entry('1',{culvertLength:'tres'}))[0].field,'culvertLength');
-  for(const invalid of ['dos','2,5','2.5','-1'])assert.equal(validateStation(entry('1',{headwallNumber:invalid}))[0].field,'headwallNumber');
+  assert.equal(validateStation(entry('1,0',{diameter:'-2'}))[0].field,'diameter');
+  assert.equal(validateStation(entry('1,0',{culvertLength:'tres'}))[0].field,'culvertLength');
+  for(const invalid of ['dos','2,5','2.5','-1'])assert.equal(validateStation(entry('1,0',{headwallNumber:invalid}))[0].field,'headwallNumber');
 });
-test('se conserva el orden de captura en todas las columnas, con capacidad exacta de 26',()=>{
+test('se ordena por valor numérico conservando cada columna con su estación y la capacidad de 26',()=>{
   const stations=[entry('12,678',{diameter:'0,80',observations:'Primera'}),entry('0,0',{observations:'Segunda'})];
   const rows=stationRows({stations});assert.equal(rows[0].row,49);assert.equal(rows[1].row,48);
-  assert.equal(rows[0].station,'12 + 678');assert.equal(rows[0].diameter,.8);assert.equal(rows[0].observations,'Primera');
+  assert.equal(rows[0].station,'0 + 000');assert.equal(rows[0].observations,'Segunda');
+  assert.equal(rows[1].station,'12 + 678');assert.equal(rows[1].diameter,.8);assert.equal(rows[1].observations,'Primera');
   assert.equal(stationRows({stations:Array.from({length:26},(_,i)=>entry(String(i)))}).at(-1).row,24);
   assert.throws(()=>stationRows({stations:Array.from({length:27},(_,i)=>entry(String(i)))}),/26/);
+});
+test('recuperar un borrador ordena estaciones y conserva enteros antiguos, repeticiones y sus datos',()=>{
+  const inv=createInventory();inv.sheets[0].stations=[entry('12',{id:'a',observations:'Anterior'}),entry('2,870',{id:'b',observations:'Uno'}),entry('02.87',{id:'c',observations:'Dos'})];
+  const restored=fromBackup(toBackup(inv),catalog),records=restored.sheets[0].stations;
+  assert.deepEqual(records.map(r=>r.id),['b','c','a']);assert.equal(records[2].station,'12,0');
+  assert.equal(records[0].observations,'Uno');assert.equal(records[1].observations,'Dos');
+  assert.deepEqual([...duplicateStationValues(restored.sheets)],[2870]);
+});
+test('al recuperar el orden, los símbolos se validan en su fila anterior y siguen a su ID sin perderse',()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];
+  sheet.stations=Array.from({length:9},(_,i)=>entry(`${i+1},0`,{id:`s${i}`}));sheet.stations[8].station='0,0';
+  const oldHeight=stationFrame(sheet.stations,'s8').height;
+  sheet.graphics.activeMode='station';sheet.graphics.free=[createGraphic('bacheo')];
+  sheet.graphics.station=[constrainGraphic(createGraphic('bacheo',{stationId:'s8',frameHeight:oldHeight}),{width:.12,height:.8,rotation:45},oldHeight)];
+  const free=structuredClone(sheet.graphics.free),restored=fromBackup(toBackup(inv),catalog).sheets[0];
+  assert.equal(restored.stations[0].id,'s8');assert.equal(restored.graphics.station[0].stationId,'s8');assert.deepEqual(restored.graphics.free,free);
+  const box=graphicBounds(restored.graphics.station[0],stationFrame(restored.stations,'s8').height);
+  assert.ok(box.x>=-1e-7&&box.y>=-1e-7&&box.x+box.width<=1+1e-7&&box.y+box.height<=1+1e-7);
 });
 test('cada hoja exporta sus estaciones y los respaldos nuevos y anteriores se recuperan',()=>{
   let inventory=addSheet(createInventory());

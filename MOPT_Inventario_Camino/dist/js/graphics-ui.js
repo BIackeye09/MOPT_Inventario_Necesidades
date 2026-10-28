@@ -1,5 +1,5 @@
 // Dos editores sobre las mismas medidas del DPA-301. Cada caso tiene su dibujo.
-import {SYMBOLS,GRAPH_FRAME,GRAPH_LIMIT,MODES,createGraphics,createGraphic,constrainGraphic,symbolById,symbolUrl,stationFrame,fitGraphicView,constrainGraphicView,zoomGraphicView} from './graphics-model.js';
+import {SYMBOLS,GRAPH_FRAME,GRAPH_LIMIT,MODES,createGraphics,createGraphic,constrainGraphic,stretchGraphic,symbolById,symbolUrl,stationFrame,fitGraphicView,constrainGraphicView,zoomGraphicView} from './graphics-model.js';
 import {formatStation} from './stations.js';
 import {sheetLabel} from './model.js';
 import {createId} from './ids.js';
@@ -66,13 +66,25 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
     if(item) {
       const x=item.x*GRAPH_FRAME.width,y=item.y*height,w=item.width*GRAPH_FRAME.width,h=item.height*height;
       const unit=unitsPerPixel(svg,stationId),inFocus=isFocus(svg),handle=inFocus?8*unit:(stationId?1.5:2.2),hit=Math.max(handle,(inFocus?24:12)*unit);
-      selection=`<g data-graphic-id="${esc(item.id)}" transform="rotate(${item.rotation||0} ${x+w/2} ${y+h/2})"><rect x="${x}" y="${y}" width="${w}" height="${h}" class="graphic-selection" pointer-events="none"/>`+
-        [['nw',x,y],['ne',x+w,y],['sw',x,y+h],['se',x+w,y+h]].map(([name,a,b])=>`<rect x="${a-hit/2}" y="${b-hit/2}" width="${hit}" height="${hit}" data-handle="${name}" class="graphic-handle-hit ${name}"/><rect x="${a-handle/2}" y="${b-handle/2}" width="${handle}" height="${handle}" class="graphic-handle ${name}"/>`).join('')+'</g>';
+      selection=`<g data-graphic-id="${esc(item.id)}" transform="rotate(${item.rotation||0} ${x+w/2} ${y+h/2})"><rect x="${x}" y="${y}" width="${w}" height="${h}" class="graphic-selection" pointer-events="none"/>`;
+      const extentX=Math.max(w/2+24*unit,48*unit),extentY=Math.max(h/2+24*unit,48*unit);
+      if(inFocus) {
+        // Separar los controles de la figura deja libre el centro para moverla,
+        // aun si la imagen es una línea muy fina. Cada zona de toque mide 44 px.
+        for(const [name,a,b,edgeX,edgeY]of [['w',x+w/2-extentX,y+h/2,x,y+h/2],['e',x+w/2+extentX,y+h/2,x+w,y+h/2],['n',x+w/2,y+h/2-extentY,x+w/2,y],['s',x+w/2,y+h/2+extentY,x+w/2,y+h]]) {
+          const horizontal=name==='w'||name==='e',u=unit,label=horizontal?'Cambiar largo':'Cambiar grosor';
+          const arrow=horizontal?`M ${a-4*u} ${b} h ${8*u} m ${-6*u} ${-2*u} l ${-2*u} ${2*u} l ${2*u} ${2*u} m ${4*u} ${-4*u} l ${2*u} ${2*u} l ${-2*u} ${2*u}`:`M ${a} ${b-4*u} v ${8*u} m ${-2*u} ${-6*u} l ${2*u} ${-2*u} l ${2*u} ${2*u} m ${-4*u} ${4*u} l ${2*u} ${2*u} l ${2*u} ${-2*u}`;
+          selection+=`<line x1="${edgeX}" y1="${edgeY}" x2="${a}" y2="${b}" class="graphic-axis-stem"/><circle cx="${a}" cy="${b}" r="${8*u}" class="graphic-axis-knob"/><path d="${arrow}" class="graphic-axis-arrow"/><circle cx="${a}" cy="${b}" r="${22*u}" data-handle="${name}" class="graphic-axis-hit ${name}" tabindex="0" role="button" aria-label="${label}: arrastrá este extremo o usá las flechas del teclado"/>`;
+        }
+      } else selection+= [['nw',x,y],['ne',x+w,y],['sw',x,y+h],['se',x+w,y+h]].map(([name,a,b])=>`<rect x="${a-hit/2}" y="${b-hit/2}" width="${hit}" height="${hit}" data-handle="${name}" class="graphic-handle-hit ${name}"/><rect x="${a-handle/2}" y="${b-handle/2}" width="${handle}" height="${handle}" class="graphic-handle ${name}"/>`).join('');
+      selection+='</g>';
       // El control circular queda dentro del lienzo, aun en un renglón pequeño.
       const angle=(item.rotation||0)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle),cx=x+w/2,cy=y+h/2;
       const edgeX=cx+h/2*s,edgeY=cy-h/2*c;
       const gap=inFocus?30*unit:7,margin=inFocus?Math.min(6,22*unit):6,k=inFocus?12*unit/3.2:1;
-      const rx=clamp(edgeX+gap*s,margin,GRAPH_FRAME.width-margin),ry=clamp(edgeY-gap*c,stationId?-margin:margin,stationId?height+margin:height-margin);
+      // El giro va en la esquina exterior para no tapar el control de grosor.
+      const rx=inFocus?cx+extentX*c+extentY*s:clamp(edgeX+gap*s,margin,GRAPH_FRAME.width-margin);
+      const ry=inFocus?cy+extentX*s-extentY*c:clamp(edgeY-gap*c,stationId?-margin:margin,stationId?height+margin:height-margin);
       selection+=`<g data-graphic-id="${esc(item.id)}" class="graphic-rotation-control"><line x1="${edgeX}" y1="${edgeY}" x2="${rx}" y2="${ry}" class="graphic-rotation-stem" pointer-events="none"/><circle cx="${rx}" cy="${ry}" r="${3.2*k}" class="graphic-rotation-knob" pointer-events="none"/><path d="M ${rx+1.6*k} ${ry+.1*k} a ${1.6*k} ${1.6*k} 0 1 1 ${-.6*k} ${-1.35*k} m 0 ${-1.1*k} v ${1.3*k} h ${-1.3*k}" class="graphic-rotation-arrow" pointer-events="none"/><circle cx="${rx}" cy="${ry}" r="${inFocus?22*unit:6}" fill="transparent" data-handle="rotate" tabindex="0" role="button" aria-label="Girar símbolo: arrastrá la flecha circular o usá izquierda y derecha" class="graphic-rotation-hit"/></g>`;
     }
     svg.innerHTML=background+guides+labels+symbols+selection;
@@ -107,6 +119,13 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
     const item=chosen();if(!item)return;
     const width=Math.min(1,item.width*factor),height=Math.min(1,item.height*factor),before=copy(list());
     Object.assign(item,constrainGraphic(item,{width,height,x:item.x+(item.width-width)/2,y:item.y+(item.height-height)/2},frame(item.stationId).height));changed(before);
+  }
+  function stretch(axis,factor) {
+    if(!symbolsEnabled())return;
+    const item=chosen();if(!item)return;
+    const before=copy(list()),next=stretchGraphic(item,axis,item[axis]*factor,frame(item.stationId).height);
+    if(JSON.stringify(item)===JSON.stringify(next))return;
+    Object.assign(item,next);changed(before);
   }
   // Controles alternativos al gesto táctil y a la flecha de giro.
   function rotate(value) {
@@ -156,13 +175,13 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
     if(!full)return;
     const item=chosen(),editing=full.interaction==='symbol';
     $('graphic-focus-selected').textContent=!editing?'Símbolos bloqueados. Elegí «Símbolo» para editar.':item?symbolById(item.symbolId).label:'Tocá un símbolo en el dibujo para seleccionarlo.';
-    for(const id of ['graphic-focus-smaller','graphic-focus-larger','graphic-focus-left','graphic-focus-right','graphic-focus-duplicate','graphic-focus-delete'])$(id).disabled=!editing||!item;
+    for(const id of ['graphic-focus-smaller','graphic-focus-larger','graphic-focus-longer','graphic-focus-shorter','graphic-focus-thicker','graphic-focus-thinner','graphic-focus-left','graphic-focus-right','graphic-focus-duplicate','graphic-focus-delete'])$(id).disabled=!editing||!item;
     $('graphic-focus-undo').disabled=!editing||!history().length;
     $('graphic-focus-add').disabled=!editing;
     for(const id of ['graphic-focus-fit','graphic-focus-working','graphic-focus-zoom-in','graphic-focus-zoom-out'])$(id).disabled=editing;
     $('graphic-focus-view').setAttribute('aria-pressed',String(full.interaction==='view'));
     $('graphic-focus-symbol').setAttribute('aria-pressed',String(full.interaction==='symbol'));
-    $('graphic-focus-hint').textContent=editing?'Solo símbolo: mover, tamaño y giro. Vista fija.':'Solo vista: mover y zoom. Símbolos bloqueados.';
+    $('graphic-focus-hint').textContent=editing?'Laterales: largo. Arriba/abajo: grosor. Vista fija.':'Solo vista: mover y zoom. Símbolos bloqueados.';
     $('graphic-focus-zoom').textContent=`${Math.round((full.base?.width/full.box?.width||1)*100)}%`;
   }
   function focusPanels(which) {
@@ -316,7 +335,7 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
     }
     selected=item.id;const box=frame(stationId);
     drag={svg,stationId,height:box.height,pointers:new Map([[event.pointerId,p]]),before:copy(list()),id:item.id,
-      handle:event.pointerType==='touch'&&handle!=='rotate'?null:handle};
+      handle};
     rebaseGesture();svg.setPointerCapture(event.pointerId);svg.focus({preventScroll:true});paintAll();event.preventDefault();
   }
   function move(event) {
@@ -339,6 +358,11 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
       let rotation=(original.rotation||0)+(Math.atan2(p.y-drag.center.y,p.x-drag.center.x)-drag.startAngle)*180/Math.PI;
       if(event.shiftKey)rotation=Math.round(rotation/15)*15;else rotation=Math.round(rotation*10)/10;
       patch={rotation};
+    } else if(['e','w','n','s'].includes(drag.handle)) {
+      const angle=(original.rotation||0)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle),horizontal=drag.handle==='e'||drag.handle==='w';
+      const delta=horizontal?(dx*GRAPH_FRAME.width*c+dy*drag.height*s)/GRAPH_FRAME.width:(-dx*GRAPH_FRAME.width*s+dy*drag.height*c)/drag.height;
+      const start=drag.handle==='w'||drag.handle==='n',axis=horizontal?'width':'height';
+      patch=stretchGraphic(original,axis,original[axis]+(start?-delta:delta),drag.height,start?'end':'start');
     } else if(drag.handle) {
       const angle=(original.rotation||0)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
       const localX=(dx*GRAPH_FRAME.width*c+dy*drag.height*s)/GRAPH_FRAME.width;
@@ -411,6 +435,11 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
       if(direction){event.preventDefault();const unit=unitsPerPixel(svg,full.stationId);setFocusView({...full.box,x:full.box.x+direction[0]*20*unit,y:full.box.y+direction[1]*20*unit});}return;
     }
     if(!chosen())return;
+    const handle=event.target.dataset?.handle;
+    if(['e','w','n','s'].includes(handle)&&direction) {
+      event.preventDefault();const axis=handle==='e'||handle==='w'?'width':'height';
+      stretch(axis,(direction[0]+direction[1])>0?1.05:1/1.05);return;
+    }
     if(event.target.dataset?.handle==='rotate'&&['ArrowLeft','ArrowRight'].includes(event.key)) {
       event.preventDefault();rotate((chosen().rotation||0)+(event.key==='ArrowLeft'?-1:1)*(event.shiftKey?15:1));return;
     }
@@ -441,7 +470,7 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
   $('graphic-focus-working').addEventListener('click',()=>{if(full?.interaction==='view'){fitFocus('working');focusPanels();}});
   $('graphic-focus-zoom-in').addEventListener('click',()=>focusZoom(1.4));$('graphic-focus-zoom-out').addEventListener('click',()=>focusZoom(1/1.4));
   $('graphic-focus-undo').addEventListener('click',undoGraphic);
-  for(const [id,action]of [['graphic-focus-smaller',()=>resize(.85)],['graphic-focus-larger',()=>resize(1.15)],['graphic-focus-left',()=>rotate((chosen()?.rotation||0)-15)],['graphic-focus-right',()=>rotate((chosen()?.rotation||0)+15)],['graphic-focus-duplicate',duplicate],['graphic-focus-delete',remove]]) {
+  for(const [id,action]of [['graphic-focus-smaller',()=>resize(.85)],['graphic-focus-larger',()=>resize(1.15)],['graphic-focus-longer',()=>stretch('width',1.15)],['graphic-focus-shorter',()=>stretch('width',1/1.15)],['graphic-focus-thicker',()=>stretch('height',1.15)],['graphic-focus-thinner',()=>stretch('height',1/1.15)],['graphic-focus-left',()=>rotate((chosen()?.rotation||0)-15)],['graphic-focus-right',()=>rotate((chosen()?.rotation||0)+15)],['graphic-focus-duplicate',duplicate],['graphic-focus-delete',remove]]) {
     $(id).addEventListener('click',()=>{if(full?.interaction==='symbol')action();});
   }
   $('graphic-focus-symbols').innerHTML=SYMBOLS.map(s=>`<button type="button" data-focus-symbol="${s.id}"><img src="${symbolUrl(s.id)}" alt="" draggable="false"><span>${esc(s.label)}</span></button>`).join('');

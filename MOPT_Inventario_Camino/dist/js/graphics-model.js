@@ -1,6 +1,7 @@
 // Coordenadas compartidas por los dos editores y por las exportaciones.
 import {SYMBOLS} from './symbol-catalog.js';
 import {createId} from './ids.js';
+import {sortStations} from './stations.js';
 export {SYMBOLS};
 export const GRAPH_FRAME=Object.freeze({left:91.165,top:312.646,width:90.077,height:440.922});
 // Líneas de la calzada en el dibujo original, relativas al recuadro gráfico.
@@ -64,6 +65,27 @@ export function constrainGraphic(item,patch={},frameHeight=GRAPH_FRAME.height) {
   for(const key of ['x','y','width','height'])next[key]=round(next[key]);
   return next;
 }
+// Estira un solo eje local del símbolo. El otro conserva exactamente su medida,
+// también al girar o llegar al límite del recuadro del documento.
+export function stretchGraphic(item,axis,value,frameHeight=GRAPH_FRAME.height,anchor='center') {
+  const angle=(item.rotation||0)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle),ac=Math.abs(c),as=Math.abs(s);
+  let maximum=1;
+  if(axis==='width') {
+    if(ac>1e-10)maximum=Math.min(maximum,(1-item.height*frameHeight/GRAPH_FRAME.width*as)/ac);
+    if(as>1e-10)maximum=Math.min(maximum,(1-item.height*ac)*frameHeight/GRAPH_FRAME.width/as);
+  } else if(axis==='height') {
+    if(as>1e-10)maximum=Math.min(maximum,(1-item.width*ac)*GRAPH_FRAME.width/frameHeight/as);
+    if(ac>1e-10)maximum=Math.min(maximum,(1-item.width*GRAPH_FRAME.width/frameHeight*as)/ac);
+  } else throw new Error('El eje del símbolo no es válido.');
+  const minimum=axis==='width'?.002:.0005,size=clamp(value,minimum,Math.max(minimum,maximum));
+  const width=axis==='width'?size:item.width,height=axis==='height'?size:item.height;
+  // El menú conserva el centro; cada tirador conserva el extremo opuesto.
+  const direction=anchor==='start'?.5:anchor==='end'?-.5:0;
+  const delta=(size-item[axis])*(axis==='width'?GRAPH_FRAME.width:frameHeight)*direction;
+  return constrainGraphic(item,{width,height,
+    x:item.x+(item.width-width)/2+delta*(axis==='width'?c:-s)/GRAPH_FRAME.width,
+    y:item.y+(item.height-height)/2+delta*(axis==='width'?s:c)/frameHeight},frameHeight);
+}
 export function createGraphic(symbolId,{stationId,frameHeight=GRAPH_FRAME.height,x=.5,y=.5}={}) {
   const symbol=symbolById(symbolId);if(!symbol)throw new Error('El símbolo no pertenece a la plantilla.');
   let width=22,height=width*symbol.height/symbol.width;
@@ -110,11 +132,21 @@ export function stationFrame(stations,stationId) {
   return {top,height:GRAPH_ROW_BOUNDS[row+1]-GRAPH_ROW_BOUNDS[row]};
 }
 export function graphicPlacements(sheet={}) {
-  const stations=sheet.stations||[],graphics=restoreGraphics(sheet.graphics,stations),mode=graphics.activeMode;
+  const previous=sheet.stations||[],stations=sortStations(previous),graphics=restoreGraphics(sheet.graphics,previous),mode=graphics.activeMode;
   return graphics[mode].map(item=>{
     const frame=mode==='free'?{top:0,height:GRAPH_FRAME.height}:stationFrame(stations,item.stationId);
+    if(mode==='station'&&Math.abs(stationFrame(previous,item.stationId).height-frame.height)>1e-6)item=constrainGraphic(item,{},frame.height);
     return {id:item.id,symbolId:item.symbolId,x:item.x*GRAPH_FRAME.width,y:frame.top+item.y*frame.height,
       width:item.width*GRAPH_FRAME.width,height:item.height*frame.height,rotation:item.rotation};
+  });
+}
+// La asociación es por ID: al ordenar, el símbolo sigue a su estación. Solo
+// se ajusta su contorno si el nuevo renglón tiene una altura diferente.
+export function reflowStationGraphics(sheet,previousStations=[]) {
+  if(!sheet.graphics)return;
+  sheet.graphics.station=sheet.graphics.station.map(item=>{
+    const before=stationFrame(previousStations,item.stationId),after=stationFrame(sheet.stations,item.stationId);
+    return after&&(!before||Math.abs(before.height-after.height)>1e-6)?constrainGraphic(item,{},after.height):item;
   });
 }
 // El archivo recibe el contorno ya girado, sin depender de cómo Excel interprete
@@ -124,9 +156,8 @@ export function exportGraphic(item) {
   const width=item.width*c+item.height*s,height=item.height*c+item.width*s;
   return {...item,x:item.x+(item.width-width)/2,y:item.y+(item.height-height)/2,width,height,imageKey:graphicAssetKey(item)};
 }
-export function removeStationGraphics(sheet,stationId) {
-  if(sheet.graphics)sheet.graphics.station=sheet.graphics.station.filter(item=>item.stationId!==stationId)
-    .map(item=>constrainGraphic(item,{},stationFrame(sheet.stations,item.stationId).height));
+export function removeStationGraphics(sheet,stationId,previousStations=[]) {
+  if(sheet.graphics){sheet.graphics.station=sheet.graphics.station.filter(item=>item.stationId!==stationId);reflowStationGraphics(sheet,previousStations);}
 }
 // La figura original tiene alta resolución y transparencia. El lienzo solo gira
 // esos píxeles; se reutilizan los mismos bytes en PDF y Excel.

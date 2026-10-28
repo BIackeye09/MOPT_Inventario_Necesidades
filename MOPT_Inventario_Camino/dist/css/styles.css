@@ -74,7 +74,7 @@ body.drawing-open{overflow:hidden;overscroll-behavior:none}
 
 .graphic-precision{margin-top:8px}.graphic-precision summary{cursor:pointer;font-size:12px;color:var(--blue);padding:7px 0}.graphic-precision .graphic-rotation{margin-top:4px}.graphic-toolbar .graphic-tools .button{min-height:40px;padding:7px 9px}
 .sketch-dialog .sketch-viewport{background:#f0f3f7}.sketch-dialog .sketch-surface{outline:1px solid #cad3df}
-@media(pointer:coarse){.graphic-handle-hit{pointer-events:none}}
+.graphic-axis-stem,.graphic-axis-knob,.graphic-axis-arrow{pointer-events:none;vector-effect:non-scaling-stroke;stroke:#2469ac;stroke-width:1.5px}.graphic-axis-knob{fill:#fff}.graphic-axis-arrow{fill:none;stroke-linecap:round;stroke-linejoin:round}.graphic-axis-hit{fill:transparent;touch-action:none;pointer-events:all}.graphic-axis-hit.e,.graphic-axis-hit.w{cursor:ew-resize}.graphic-axis-hit.n,.graphic-axis-hit.s{cursor:ns-resize}.graphic-axis-hit:focus-visible{stroke:#2469ac;stroke-width:1.5px;vector-effect:non-scaling-stroke;outline:0}
 
 /* Caso 1: la página crece con la carretera y conserva su ancho de trabajo. */
 .graphic-free-viewport{height:auto;max-height:none;padding:10px;overflow:visible}

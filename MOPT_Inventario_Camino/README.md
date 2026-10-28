@@ -1,13 +1,17 @@
 # Inventario de Necesidades del Camino · MOPT
 
-Aplicación DPA-301, versión 0.8.2 · 28 de octubre de 2026.
+Aplicación DPA-301, versión 0.8.4 · 28 de octubre de 2026.
+
+Las estaciones nuevas requieren un entero, una sola coma o punto y de uno a tres decimales (`2,870`, `2.864`, `0,0`). No se admiten repeticiones en ninguna hoja del mismo inventario: `2,870`, `2.870` y `02,87` representan la misma estación. Editar un registro conserva su ID y permite mantener su propio número.
+
+Cada hoja se ordena por el valor numérico, de menor a mayor y de abajo hacia arriba. Así, `2,864` queda en el renglón inferior y `2,870` en el siguiente. Agregar o editar reubica los datos y los símbolos del Caso 2 con su estación; la vista previa y las descargas comparten ese orden. Los enteros de borradores anteriores se recuperan con `,0`. Si el borrador ya contiene números repetidos se muestran para corregirlos, conservando todos los registros y sus detalles.
 Interfaz en español para computadora y teléfono; servidor local con Dart en el puerto **8081**.
 
 ## Uso
 
 1. Seleccionar un camino del catálogo o ingresarlo manualmente y revisar el encabezado.
 2. Usar la barra **Hoja** para seleccionar, agregar o eliminar hojas. En teléfono, las secciones están en la navegación inferior.
-3. Completar **Estaciones y detalles**. La primera estación queda abajo y las siguientes suben; cada hoja admite 26.
+3. Completar **Estaciones y detalles**. Las estaciones se ordenan de menor a mayor, de abajo hacia arriba; cada hoja admite 26.
 4. En **Representación gráfica**, elegir un caso y abrir el dibujo. El Caso 2 tiene **Editar dibujo** junto a cada estación. La vista previa y las descargas usan el caso seleccionado.
 5. En **Parte trasera · Croquis**, abrir la hoja blanca a pantalla completa. El menú **☰** reúne las herramientas y **Volver a la app**.
 6. Escribir las **Observaciones del reverso** fuera del lienzo. Se distribuyen en los ocho renglones originales.
@@ -23,9 +27,9 @@ La navegación inferior permite pasar entre Encabezado, Estaciones, Gráfico y C
 
 1. En Gráfico, elegí el caso. Abrí **Abrir dibujo a pantalla completa**, **Editar dibujo** junto a una estación, o tocá directamente su miniatura.
 2. **Mover y zoom**: un dedo recorre la carretera; dos dedos acercan o alejan la vista. También se puede acercar con doble toque. Los símbolos quedan bloqueados, incluso al tocar una figura; sus herramientas y Agregar se deshabilitan.
-3. **Símbolo**: un dedo selecciona y arrastra la figura; dos dedos la agrandan o achican. La flecha circular permite girarla. La vista queda fija: tocar el fondo, pellizcarlo o usar la rueda no cambia el zoom ni mueve la cámara. Para acercar la vista, volvé a **Mover y zoom**.
+3. **Símbolo**: un dedo selecciona y arrastra la figura; dos dedos la agrandan o achican en conjunto. Los tiradores laterales estiran solo el **largo**, manteniendo el grosor. Los de arriba y abajo cambian solo el **grosor**, manteniendo el largo. Sus zonas de toque miden 44 px y quedan separadas de la figura para poder agarrar líneas pequeñas. Siguen los ejes del símbolo al girarlo. La flecha circular de la esquina permite girar. La vista queda fija: tocar el fondo, pellizcarlo o usar la rueda no cambia el zoom ni mueve la cámara. Para acercar la vista, volvé a **Mover y zoom**.
 4. En modo **Símbolo**, **＋ Agregar** abre la lista de las 18 figuras originales. Al elegir una, la lista se cierra y continúa el mismo modo.
-5. **☰** reúne Ver todo, Ancho de trabajo, botones de zoom, cambio de tamaño, giro, Duplicar, Eliminar y Deshacer. Solo se habilitan las herramientas del modo elegido; ninguna cambia de modo automáticamente.
+5. **☰** reúne Ver todo, Ancho de trabajo, botones de zoom, **Alargar / Acortar**, **Más grosor / Menos grosor**, cambio de tamaño completo, giro, Duplicar, Eliminar y Deshacer. Los ajustes por eje no escalan la otra medida, tampoco al llegar a un borde. Solo se habilitan las herramientas del modo elegido; ninguna cambia de modo automáticamente.
 6. En el Caso 2, el selector superior cambia de estación sin salir y conserva el modo elegido. **←** vuelve al inventario; los cambios del símbolo se guardan automáticamente.
 
 El área de agarre incluye un margen alrededor de las líneas finas. Los controles del símbolo conservan su tamaño en pantalla al acercar la vista. Un gesto completo ocupa un paso de Deshacer; mover la cámara no agrega pasos. Cancelar un gesto restaura el estado anterior y libera los punteros.
@@ -66,7 +70,7 @@ La carpeta publicable es **dist/**. Reemplazá su contenido completo en la carpe
 
 Los archivos de desarrollo, pruebas, Dart y ejemplos quedan fuera de la carpeta pública. Para subir por la interfaz de GitHub, seleccioná solo los archivos de la versión web; `dist/` contiene menos de 100 archivos. Con Git no existe ese límite de selección por carga.
 
-La PWA actualiza su caché a 0.8.2. Cerrá y volvé a abrir la app o recargá con conexión después de reemplazar los archivos. Se mantiene la misma clave local del borrador. Cambiar de navegador, dominio o puerto crea un espacio de datos distinto.
+La PWA actualiza su caché a 0.8.4. Cerrá y volvé a abrir la app o recargá con conexión después de reemplazar los archivos. Se mantiene la misma clave local del borrador. Cambiar de navegador, dominio o puerto crea un espacio de datos distinto.
 
 ## Plantilla y datos
 
