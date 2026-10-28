@@ -1,6 +1,6 @@
 # Subir el inventario completo a GitHub
 
-Versión 0.8.1 · 27 de octubre de 2026.
+Versión 0.8.2 · 28 de octubre de 2026.
 
 El paquete completo contiene **97 archivos**. Los dos casos de representación gráfica, el croquis, Excel, PDF, las fuentes, las pruebas, los ejemplos y el servidor Dart están incluidos. Los símbolos y sus datos se agruparon en `dist/js/symbol-catalog.js`; sus imágenes conservan exactamente los bytes originales.
 
@@ -8,11 +8,11 @@ GitHub permite cargar hasta 100 archivos **por subida desde el navegador**. Ese 
 
 ## Opción 1: una sola subida
 
-1. Descomprimí `MOPT_Inventario_Camino_v0.8.1.zip`.
+1. Descomprimí `MOPT_Inventario_Camino_v0.8.2.zip`.
 2. Entrá a la carpeta `MOPT_Inventario_Camino` que queda dentro.
 3. En la raíz de tu repositorio, elegí **Add file → Upload files**.
 4. Arrastrá el contenido de esa carpeta, conservando los nombres y las carpetas. No arrastrés el ZIP ni agregués otra carpeta exterior con el nombre del proyecto.
-5. Escribí un mensaje como `Actualizar inventario a 0.8.1` y guardá los cambios.
+5. Escribí un mensaje como `Actualizar inventario a 0.8.2` y guardá los cambios.
 
 ## Opción 2: tres cargas pequeñas
 
@@ -47,7 +47,7 @@ La publicación continúa usando el contenido de `dist/`. Conservá tu configura
 
 ## Comprobación
 
-Abrí la web, recargá con conexión y verificá que al pie aparezca **0.8.1**. Probá ambos casos de símbolos, el croquis, Vista previa, Descargar Excel y Descargar PDF. El borrador sigue guardado en el mismo navegador y dirección.
+Abrí la web, recargá con conexión y verificá que al pie aparezca **0.8.2**. Probá ambos casos de símbolos, el croquis, Vista previa, Descargar Excel y Descargar PDF. El borrador sigue guardado en el mismo navegador y dirección.
 
 ## Fuentes oficiales
 

@@ -1,5 +1,5 @@
 INVENTARIO DE NECESIDADES DEL CAMINO · MOPT
-Versión 0.8.1 · 27/10/2026
+Versión 0.8.2 · 28/10/2026
 
 PARA INICIAR
 1. Descomprimí toda la carpeta.
@@ -12,6 +12,9 @@ app requiere HTTPS o localhost. El puerto 8081 evita el conflicto con el
 reporte que utiliza 8080.
 
 CAMBIOS DE ESTA VERSIÓN
+- Caso 1: líneas horizontales azules que delimitan el renglón de cada
+  estación registrada, en la ruta principal y en el editor de teléfono.
+  Son guías visuales; no se exportan ni bloquean el arrastre de los símbolos.
 - Interfaz móvil: secciones abajo, descargas en una fila y campos legibles.
 - Editor gráfico a pantalla completa, con dos modos independientes:
   Mover y zoom: un dedo mueve la vista; dos dedos acercan o alejan.
@@ -66,7 +69,7 @@ Si GitHub Pages sirve docs/, copiá allí el contenido de dist/.
 El proyecto completo tiene 97 archivos y dist/ tiene 49. El resto del proyecto son
 herramientas, código de prueba y ejemplos para conservar en tu equipo.
 Después de actualizar, recargá con conexión o cerrá y abrí la app.
-La versión se muestra al final de la página: 0.8.1.
+La versión se muestra al final de la página: 0.8.2.
 
 EJEMPLOS
 En ejemplos/croquis-localizacion.xls y .pdf podés revisar el croquis y

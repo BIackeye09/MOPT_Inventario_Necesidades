@@ -41,6 +41,7 @@ dialog{border:1px solid var(--border);border-radius:12px;padding:0;background:wh
 .graphic-symbol image{pointer-events:none;-webkit-user-drag:none;user-select:none}
 .graphic-handle-hit{fill:transparent;touch-action:none}.graphic-handle{pointer-events:none}
 .graphic-station-mark{font-size:3.6px}
+.graphic-station-guide{stroke:#638db5;stroke-width:1px;stroke-dasharray:6px 4px;vector-effect:non-scaling-stroke;pointer-events:none}
 .sketch-entry{display:flex;align-items:center;gap:20px;padding:12px 0 20px}
 .sketch-entry-icon{width:75px;height:75px;display:grid;place-items:center;background:#edf4fc;border:1px solid #cadbef;border-radius:12px;font-size:38px;color:var(--blue);flex-shrink:0}
 .sketch-entry h3{margin:0;font-size:16px;color:var(--blue)}.sketch-entry p{font-size:13px;color:var(--muted);margin:6px 0 16px}

@@ -1,5 +1,5 @@
 // La caché solo guarda los recursos de esta aplicación, nunca otras páginas del sitio.
-const CACHE = 'mopt-inventario-v0.8.1';
+const CACHE = 'mopt-inventario-v0.8.2';
 const ASSETS = [
   "./",
   "./index.html",

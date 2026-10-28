@@ -41,10 +41,20 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
     const roadImage=`<image href="./symbols/carretera.png" x="0" y="${-box.top}" width="${GRAPH_FRAME.width}" height="${GRAPH_FRAME.height}" preserveAspectRatio="none" pointer-events="none"/>`;
     const clipId=`graphic-${svg.id||'row'}-${(activeSheet().stations||[]).findIndex(s=>s.id===stationId)}`;
     const background=stationId?`<defs><clipPath id="${clipId}"><rect width="${GRAPH_FRAME.width}" height="${height}"/></clipPath></defs><g clip-path="url(#${clipId})">${roadImage}</g><rect width="${GRAPH_FRAME.width}" height="${height}" fill="none" stroke="#cbd7e5" stroke-width=".3" pointer-events="none"/>`:roadImage;
-    let labels='';
-    if(!stationId)for(const station of activeSheet().stations||[]) {
-      const row=frame(station.id);
-      labels+=`<text x="-3" y="${row.top+row.height/2+1.5}" text-anchor="end" class="graphic-station-mark">${esc(formatStation(station.station))}</text>`;
+    let labels='',guides='';
+    if(!stationId) {
+      const boundaries=new Set();
+      for(const station of activeSheet().stations||[]) {
+        const row=frame(station.id);
+        labels+=`<text x="-3" y="${row.top+row.height/2+1.5}" text-anchor="end" class="graphic-station-mark">${esc(formatStation(station.station))}</text>`;
+        // Usa los mismos renglones de la plantilla, de abajo hacia arriba.
+        // Se redondea a su precisión original para no repetir un límite compartido.
+        boundaries.add(Number(row.top.toFixed(3)));
+        boundaries.add(Number((row.top+row.height).toFixed(3)));
+      }
+      // Son ayudas visuales del editor: no capturan el dedo ni se exportan.
+      if(boundaries.size)guides=`<g class="graphic-station-guides" aria-hidden="true" pointer-events="none">`+
+        [...boundaries].sort((a,b)=>a-b).map(y=>`<line x1="-22" y1="${y}" x2="${GRAPH_FRAME.width}" y2="${y}" class="graphic-station-guide"/>`).join('')+'</g>';
     }
     const padding=12*unitsPerPixel(svg,stationId);
     const symbols=items.map(item=>{
@@ -65,7 +75,7 @@ export function setupGraphics({getInventory,commit,notify,selectStations}) {
       const rx=clamp(edgeX+gap*s,margin,GRAPH_FRAME.width-margin),ry=clamp(edgeY-gap*c,stationId?-margin:margin,stationId?height+margin:height-margin);
       selection+=`<g data-graphic-id="${esc(item.id)}" class="graphic-rotation-control"><line x1="${edgeX}" y1="${edgeY}" x2="${rx}" y2="${ry}" class="graphic-rotation-stem" pointer-events="none"/><circle cx="${rx}" cy="${ry}" r="${3.2*k}" class="graphic-rotation-knob" pointer-events="none"/><path d="M ${rx+1.6*k} ${ry+.1*k} a ${1.6*k} ${1.6*k} 0 1 1 ${-.6*k} ${-1.35*k} m 0 ${-1.1*k} v ${1.3*k} h ${-1.3*k}" class="graphic-rotation-arrow" pointer-events="none"/><circle cx="${rx}" cy="${ry}" r="${inFocus?22*unit:6}" fill="transparent" data-handle="rotate" tabindex="0" role="button" aria-label="Girar símbolo: arrastrá la flecha circular o usá izquierda y derecha" class="graphic-rotation-hit"/></g>`;
     }
-    svg.innerHTML=background+labels+symbols+selection;
+    svg.innerHTML=background+guides+labels+symbols+selection;
   }
   function paintAll() {
     paint($('graphic-free-canvas'));

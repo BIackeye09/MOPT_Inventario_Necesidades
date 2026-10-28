@@ -1,6 +1,6 @@
 # Inventario de Necesidades del Camino · MOPT
 
-Aplicación DPA-301, versión 0.8.1 · 27 de octubre de 2026.
+Aplicación DPA-301, versión 0.8.2 · 28 de octubre de 2026.
 Interfaz en español para computadora y teléfono; servidor local con Dart en el puerto **8081**.
 
 ## Uso
@@ -34,6 +34,8 @@ Los símbolos girados pueden llegar a los extremos del recuadro: se limita su co
 
 El Caso 1 conserva el tamaño de trabajo de la carretera en la página principal. En teléfono, esa vista es una miniatura que abre el editor al tocarla; recorrer la página no mueve los símbolos. Dentro del editor se puede usar **Ver todo** para ver la ruta completa o **Ancho de trabajo** para continuar dibujando. Girar el teléfono ajusta la vista sin cambiar las figuras.
 
+En el Caso 1, las líneas horizontales azules discontinuas marcan el inicio y final del renglón de cada estación registrada. Se alinean con su rótulo y con la ubicación que ocupa en la plantilla, de abajo hacia arriba. Aparecen tanto en la página principal como en el editor de teléfono y se actualizan al agregar o eliminar estaciones o cambiar de hoja. Conservan un grosor legible con zoom y permiten arrastrar sobre ellas. Son referencias visuales para colocar las figuras; no restringen su movimiento ni se incluyen en vista previa, Excel o PDF.
+
 Los dos casos conservan dibujos independientes por hoja. Se incluyen las 18 figuras oficiales del reverso, con sus mismos píxeles y colores. El zoom, la posición de la cámara y los controles no se exportan. En computadora también se conserva el editor de la página principal.
 
 ## Croquis y observaciones
@@ -64,7 +66,7 @@ La carpeta publicable es **dist/**. Reemplazá su contenido completo en la carpe
 
 Los archivos de desarrollo, pruebas, Dart y ejemplos quedan fuera de la carpeta pública. Para subir por la interfaz de GitHub, seleccioná solo los archivos de la versión web; `dist/` contiene menos de 100 archivos. Con Git no existe ese límite de selección por carga.
 
-La PWA actualiza su caché a 0.8.1. Cerrá y volvé a abrir la app o recargá con conexión después de reemplazar los archivos. Se mantiene la misma clave local del borrador. Cambiar de navegador, dominio o puerto crea un espacio de datos distinto.
+La PWA actualiza su caché a 0.8.2. Cerrá y volvé a abrir la app o recargá con conexión después de reemplazar los archivos. Se mantiene la misma clave local del borrador. Cambiar de navegador, dominio o puerto crea un espacio de datos distinto.
 
 ## Plantilla y datos
 
