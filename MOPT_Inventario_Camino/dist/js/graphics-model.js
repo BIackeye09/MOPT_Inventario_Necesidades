@@ -4,6 +4,8 @@ import {createId} from './ids.js';
 import {sortStations} from './stations.js';
 export {SYMBOLS};
 export const GRAPH_FRAME=Object.freeze({left:91.165,top:312.646,width:90.077,height:440.922});
+// Bordes de la calzada medidos en la plantilla, usados solo como guías opcionales.
+export const GRAPH_ROAD_BOUNDS=Object.freeze({left:20.989,right:68.653});
 export const GRAPH_ROW_BOUNDS=Object.freeze([312.646,330.341,348.035,365.729,383.424,401.118,418.813,436.507,
   454.202,471.896,489.590,507.285,524.979,542.674,560.368,578.062,595.757,613.451,
   631.146,645.863,661.250,676.636,692.023,707.409,722.796,738.182,753.568]);
@@ -105,7 +107,8 @@ export function restoreGraphics(input,stations=[]) {
       if(item.width<=0||item.height<=0||item.width>1.0000001||item.height>1.0000001)throw new Error('El tamaño de un símbolo no es válido.');
       const box=graphicBounds({...item,rotation},heightFor(item));
       if(box.x<-.0000001||box.y<-.0000001||box.x+box.width>1.0000001||box.y+box.height>1.0000001)throw new Error('Un símbolo queda fuera de su recuadro.');
-      return {id:item.id,symbolId:item.symbolId,x:item.x,y:item.y,width:item.width,height:item.height,rotation};
+      if(item.locked!==undefined&&typeof item.locked!=='boolean')throw new Error('El bloqueo de un símbolo no es válido.');
+      return {id:item.id,symbolId:item.symbolId,x:item.x,y:item.y,width:item.width,height:item.height,rotation,...(item.locked?{locked:true}:{})};
     });
     if(new Set(result.map(i=>i.id)).size!==result.length)throw new Error('Hay símbolos con identificadores repetidos.');
     return result;
@@ -130,6 +133,17 @@ export function stationFrame(stations,stationId) {
   const index=stations.findIndex(s=>s.id===stationId);if(index<0)return null;
   const row=25-index,top=GRAPH_ROW_BOUNDS[row]-GRAPH_FRAME.top;
   return {top,height:GRAPH_ROW_BOUNDS[row+1]-GRAPH_ROW_BOUNDS[row]};
+}
+export function snapGraphic(item,stations=[],tolerance=3) {
+  if(item.locked)return {...item};
+  const box=graphicBounds(item),x=box.x*GRAPH_FRAME.width,y=box.y*GRAPH_FRAME.height,
+    width=box.width*GRAPH_FRAME.width,height=box.height*GRAPH_FRAME.height;
+  const vertical=[0,GRAPH_ROAD_BOUNDS.left,GRAPH_ROAD_BOUNDS.right,GRAPH_FRAME.width];
+  const horizontal=[0,GRAPH_FRAME.height];
+  for(const station of stations){const row=stationFrame(stations,station.id);horizontal.push(row.top,row.top+row.height);}
+  const nearest=(edges,guides)=>{let delta=0,distance=Math.max(0,tolerance);for(const edge of edges)for(const guide of guides){const next=guide-edge;if(Math.abs(next)<distance){distance=Math.abs(next);delta=next;}}return delta;};
+  return constrainGraphic(item,{x:item.x+nearest([x,x+width],vertical)/GRAPH_FRAME.width,
+    y:item.y+nearest([y,y+height],horizontal)/GRAPH_FRAME.height});
 }
 export function graphicPlacements(sheet={}) {
   return restoreGraphics(sheet.graphics,sheet.stations||[]).free.map(item=>({

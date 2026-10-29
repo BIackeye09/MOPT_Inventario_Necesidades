@@ -1,5 +1,5 @@
 INVENTARIO DE NECESIDADES DEL CAMINO · MOPT
-Versión final 1.0.0 · 29/10/2026
+Versión 1.1.0 · 29/10/2026
 
 PARA INICIAR
 1. Descomprimí toda la carpeta.
@@ -25,6 +25,9 @@ VERSIÓN FINAL
 - Los tiradores laterales ajustan el largo sin engrosar; arriba y abajo
   ajustan el grosor sin alargar. La flecha circular gira el símbolo.
 - Agregar muestra las 18 figuras originales; ☰ reúne las demás herramientas.
+- Las flechas de ☰ mueven ligeramente la figura. Bloquear símbolo protege
+  esa figura hasta desbloquearla; las demás siguen editables. El ajuste
+  a guías y bordes es opcional y empieza desactivado.
 - El croquis es una hoja blanca aparte, con lápiz y borrador parcial.
   ☰ permite elegir herramientas y Volver a la app. Las observaciones
   generales se escriben fuera del dibujo.
@@ -34,19 +37,32 @@ Vista previa, Excel y PDF usan siempre el dibujo completo de la hoja.
 Cada documento incluye frente y reverso. La plantilla oficial conserva
 sus medidas, líneas, celdas y dibujos. El encabezado está en Arial 14
 negrita; estaciones y observaciones en Arial 12 negro en Excel.
-El borrador se guarda en este navegador y dispositivo. No hay sincronización
-ni botones de respaldo. Antes de crear un inventario nuevo, descargá las
-hojas que necesités conservar; reemplazar el borrador requiere confirmarlo.
+Los inventarios se guardan en este navegador y dispositivo. Crear uno nuevo
+conserva el anterior en Mis inventarios; podés buscarlo y tocar Continuar.
+Los campos de una estación se guardan aunque estén incompletos y reaparecen
+al volver. Agregar estación los incorpora al documento; un formulario
+pendiente no se exporta. Descartar borrador lo vacía.
+
+En Más podés:
+- Guardar copia editable: un .mopt.json con todos los datos y dibujos.
+- Abrir copia editable: continuar el trabajo como un inventario independiente.
+- Descargar PDF completo: frente y reverso de todas las hojas, en orden.
+- Descargar todos los Excel: un ZIP con un XLS original por hoja.
+- Revisar inventario: ir a datos pendientes, formularios y textos que no caben.
+Los campos opcionales siguen siendo opcionales. Revisá los dibujos en Vista previa.
+No hay sincronización automática. La copia editable permite cambiar de equipo
+y conservar el trabajo si se borran los datos del navegador. Si no hay espacio
+o se edita el mismo trabajo desde otra ventana, la app avisa antes de cambiarlo.
 
 ACTUALIZAR TU WEB
 Reemplazá dist/ dentro de la carpeta publicable que ya usa tu hosting,
 conservando las rutas. No subás el ZIP como página web.
 Si tu repositorio tiene MOPT_Inventario_Camino/dist, reemplazá esa carpeta.
-Recargá con conexión hasta ver 1.0.0 al pie de la app.
-El proyecto tiene 95 archivos y dist/ tiene 49. Ver SUBIR_A_GITHUB.md.
+Recargá con conexión hasta ver 1.1.0 al pie de la app.
+El proyecto tiene 99 archivos y dist/ tiene 52. Ver SUBIR_A_GITHUB.md.
 
 EJEMPLOS
 representacion-grafica.xls y .pdf muestran la carretera completa.
 croquis-localizacion.xls y .pdf muestran el dibujo y observaciones del reverso.
-Los JSON son muestras internas, sin importación desde la interfaz.
+Los JSON se pueden abrir desde Más → Abrir copia editable.
 Ver README.md para los detalles y pruebas.

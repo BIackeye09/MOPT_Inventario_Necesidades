@@ -1,5 +1,5 @@
 // Reglas del inventario independientes de la pantalla para poder verificarlas.
-import {restoreStations,sortStations} from './stations.js';
+import {restoreStations,sortStations,restoreStationDraft} from './stations.js';
 import {restoreGraphics,createGraphics} from './graphics-model.js';
 import {restoreSketch,createSketch} from './sketch-model.js';
 import {restoreBackObservations} from './back-observations.js';
@@ -17,7 +17,7 @@ const clean = (v, max = 1000) => String(v ?? '').trim().slice(0, max);
 export function createInventory() {
   const sheetId = id();
   return { schemaVersion: APP_VERSION, id: id(), number: '', macroRegion: 'V',
-    surface: '', road: null, sheets: [{ id: sheetId, stations: [], graphics:createGraphics(),sketch:createSketch(),backObservations:'' }], activeSheetId: sheetId,
+    surface: '', road: null, sheets: [{ id: sheetId, stations: [], stationDraft:null, graphics:createGraphics(),sketch:createSketch(),backObservations:'' }], activeSheetId: sheetId,
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
 }
 
@@ -39,7 +39,7 @@ export function sheetLabel(inventory, sheetId = inventory.activeSheetId) {
 
 export function addSheet(inventory) {
   // El encabezado es común. Agregar una hoja conserva la hoja que se estaba usando.
-  return { ...inventory, sheets: [...inventory.sheets, { id: id(), stations: [], graphics:createGraphics(),sketch:createSketch(),backObservations:'' }] };
+  return { ...inventory, sheets: [...inventory.sheets, { id: id(), stations: [], stationDraft:null, graphics:createGraphics(),sketch:createSketch(),backObservations:'' }] };
 }
 
 export function removeSheet(inventory, sheetId) {
@@ -111,7 +111,7 @@ export function fromBackup(raw, catalog) {
   const sheets = input.sheets.map(s => {
     const stations=restoreStations(s?.stations);
     // La lectura conserva el dibujo libre y adapta los borradores antiguos.
-    const sheet={id:clean(s?.id,120),stations:sortStations(stations),graphics:restoreGraphics(s?.graphics,stations),sketch:restoreSketch(s?.sketch),backObservations:restoreBackObservations(s?.backObservations)};
+    const sheet={id:clean(s?.id,120),stations:sortStations(stations),stationDraft:restoreStationDraft(s?.stationDraft,stations),graphics:restoreGraphics(s?.graphics,stations),sketch:restoreSketch(s?.sketch),backObservations:restoreBackObservations(s?.backObservations)};
     return sheet;
   });
   if (sheets.some(s => !s.id) || new Set(sheets.map(s => s.id)).size !== sheets.length) throw new Error('La numeración de hojas del respaldo está dañada.');

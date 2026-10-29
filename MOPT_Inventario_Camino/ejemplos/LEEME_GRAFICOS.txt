@@ -13,9 +13,9 @@ Descargá Excel o PDF para comprobar el resultado sobre la plantilla.
 croquis-localizacion.xls y croquis-localizacion.pdf muestran trazos libres,
 un fragmento borrado y las observaciones del reverso.
 
-Los JSON incluidos son muestras internas para las herramientas del proyecto;
-esta versión no tiene un botón para importarlos. El borrador de la app se
-guarda automáticamente en el navegador y dispositivo que se esté usando.
+Los JSON incluidos se pueden abrir desde Más → Abrir copia editable.
+Se crea un inventario independiente y se conserva el trabajo anterior.
+Mis inventarios permite continuar los trabajos guardados en este navegador.
 
 Para regenerar la muestra gráfica desde el proyecto:
 node scripts/generar_ejemplos_graficos.mjs

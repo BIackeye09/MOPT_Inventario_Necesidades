@@ -8,7 +8,7 @@ import {rotateExamplePng} from './rotar_simbolos.mjs';
 import {renderExampleSketch} from './render_sketch.mjs';
 const root=new URL('../',import.meta.url),out=new URL('ejemplos/',root);
 const catalog=JSON.parse(await readFile(new URL('dist/data/caminos.json',root),'utf8'));
-const inventory=fromBackup(await readFile(new URL('comparar-dos-casos.json',out),'utf8'),catalog);
+const inventory=fromBackup(await readFile(new URL('representacion-grafica.json',out),'utf8'),catalog);
 inventory.number='CROQUIS-001';
 inventory.sheets[0].backObservations='Inspección del camino: se requiere limpieza de cunetas y revisión de alcantarillas.\nEl croquis indica el acceso principal, el desvío y la referencia de ubicación.\nCoordinar la atención de los puntos señalados durante el recorrido.';
 const stroke=(points,size=3,tool='pen')=>({tool,size,points});

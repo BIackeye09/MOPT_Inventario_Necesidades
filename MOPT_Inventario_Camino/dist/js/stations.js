@@ -5,6 +5,19 @@ export const STATION_COLUMNS = Object.freeze({station:'A', diameter:'J', culvert
 export const stationFields = Object.keys(STATION_COLUMNS);
 const text = value => String(value ?? '').trim();
 
+// Un formulario incompleto se recupera tal como se escribió, aunque todavía
+// tenga una estación inválida. Nunca cuenta como registro ni se exporta.
+export function restoreStationDraft(input,records=[]) {
+  if(input===undefined||input===null)return null;
+  if(typeof input!=='object'||Array.isArray(input))throw new Error('El formulario pendiente no es válido.');
+  const limits={station:24,diameter:40,culvertLength:40,headwallNumber:15,headwallType:1000,observations:1000};
+  const draft={};
+  for(const field of stationFields){const value=input[field]??'';if(typeof value!=='string'||value.length>limits[field])throw new Error('El formulario pendiente contiene un campo inválido.');draft[field]=value;}
+  draft.editingId=records.some(record=>record.id===input.editingId)?input.editingId:null;
+  if(!draft.editingId&&!stationFields.some(field=>draft[field].trim()))return null;
+  return draft;
+}
+
 export function parseStation(value) {
   const match = /^(\d+)(?:[.,](\d{1,3}))?$/.exec(text(value));
   if (!match) return null;

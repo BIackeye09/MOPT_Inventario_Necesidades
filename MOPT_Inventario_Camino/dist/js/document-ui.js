@@ -1,8 +1,10 @@
 // Vista previa y descargas locales. Se usa el mismo PDF para ver y descargar.
-import {documentValues, makePdf, makeExcel, documentFilename} from './documents.js';
+import {documentValues, makePdf, makeExcel, documentFilename,makeInventoryDocuments,checkInventoryTexts} from './documents.js';
 import {sheetLabel, validateHeader} from './model.js';
 import {loadGraphicAssets} from './graphics-model.js';
 import {loadSketchAsset} from './sketch-model.js';
+import {makeZip} from './zip.js';
+import {hasPendingStation} from './inventory-store.js';
 
 const $ = id => document.getElementById(id);
 function download(bytes, mime, name) {
@@ -109,7 +111,7 @@ export function setupDocuments({getInventory, notify}) {
   async function exportFile(format) {
     if(busy)return;
     busy=true;
-    const buttons=[...document.querySelectorAll('[data-export]')];
+    const buttons=[...document.querySelectorAll('[data-export],[data-export-all]')];
     buttons.forEach(b=>{b.disabled=true;});
     status(format==='pdf'?'Preparando PDF…':'Preparando Excel…');
     try {
@@ -122,7 +124,23 @@ export function setupDocuments({getInventory, notify}) {
     finally {busy=false;buttons.forEach(b=>{b.disabled=false;});}
   }
   document.querySelectorAll('[data-export]').forEach(button=>button.addEventListener('click',()=>exportFile(button.dataset.export)));
+  async function exportAll(format){
+    if(busy)return;busy=true;
+    const buttons=[...document.querySelectorAll('[data-export],[data-export-all]')];buttons.forEach(button=>{button.disabled=true;});
+    $('document-more').open=false;
+    try{
+      const inventory=structuredClone(getInventory()),[excel,pdf]=await load();
+      const result=await makeInventoryDocuments(excel,pdf,inventory,{format,progress:(sheet,total)=>status(`Preparando ${format==='pdf'?'PDF':'Excel'}: hoja ${sheet} de ${total}…`)});
+      const code=(inventory.road?.code||'borrador').replace(/[^a-zA-Z0-9-]/g,'_');
+      download(format==='pdf'?result:makeZip(result),format==='pdf'?'application/pdf':'application/zip',`Inventario_DPA301_${code}_${format==='pdf'?'completo.pdf':'todos-los-Excel.zip'}`);
+      const pending=inventory.sheets.filter(hasPendingStation).length;
+      const message=`${format==='pdf'?'PDF completo':'ZIP con todos los Excel'} descargado: ${inventory.sheets.length} hojas con frente y reverso.${pending?' Los formularios pendientes de agregar no se incluyen.':''}`;
+      status(message);notify(message);
+    }catch(error){status(error.message,true);notify(error.message);}
+    finally{busy=false;buttons.forEach(button=>{button.disabled=false;});}
+  }
+  document.querySelectorAll('[data-export-all]').forEach(button=>button.addEventListener('click',()=>exportAll(button.dataset.exportAll)));
   $('open-preview').addEventListener('click',openPreview);
   refresh();
-  return {refresh};
+  return {refresh,checkTexts:async inventory=>checkInventoryTexts(inventory,(await load())[1])};
 }

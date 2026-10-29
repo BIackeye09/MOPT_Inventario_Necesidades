@@ -5,8 +5,8 @@ import { fillExcelTemplate } from './excel-template.js';
 import { INPUT_FONT } from './excel-format.js';
 import { parseKm } from './model.js';
 import {TABLE_FONT, stationRows} from './stations.js';
-import {GRAPH_FRAME,GRAPH_ROW_BOUNDS,graphicPlacements,exportGraphic} from './graphics-model.js';
-import {SKETCH_FRAME,SKETCH_KEY,restoreSketch} from './sketch-model.js';
+import {GRAPH_FRAME,GRAPH_ROW_BOUNDS,graphicPlacements,exportGraphic,loadGraphicAssets} from './graphics-model.js';
+import {SKETCH_FRAME,SKETCH_KEY,restoreSketch,loadSketchAsset} from './sketch-model.js';
 import {backObservationLines} from './back-observations.js';
 
 export function documentValues(inventory) {
@@ -144,4 +144,40 @@ export function documentFilename(inventory, extension) {
   const values = documentValues(inventory);
   const code = (values.code || 'borrador').replace(/[^a-zA-Z0-9-]/g,'_');
   return `Inventario_DPA301_${code}_hoja-${values.sheet}-de-${values.total}.${extension}`;
+}
+
+// Las hojas se generan con la misma función que la descarga individual. Unir
+// páginas no añade márgenes, rótulos ni cambios a la plantilla oficial.
+export async function makeInventoryDocuments(excelTemplate,pdfTemplate,inventory,{format='pdf',progress=()=>{},assetsFor}={}) {
+  if(!['pdf','excel'].includes(format))throw new Error('El formato del inventario no es válido.');
+  const snapshot=structuredClone(inventory),files=[],combined=format==='pdf'?await PDFDocument.create():null;
+  for(let i=0;i<snapshot.sheets.length;i++){
+    snapshot.activeSheetId=snapshot.sheets[i].id;progress(i+1,snapshot.sheets.length);
+    const values=documentValues(snapshot),assets=assetsFor?await assetsFor(values):
+      {...await loadGraphicAssets(values.graphics),...await loadSketchAsset(values.sketch)};
+    const pdfBytes=await makePdf(pdfTemplate,values,assets);
+    if(combined){const source=await PDFDocument.load(pdfBytes,{updateMetadata:false});const pages=await combined.copyPages(source,source.getPageIndices());pages.forEach(page=>combined.addPage(page));}
+    else files.push({name:documentFilename(snapshot,'xls'),bytes:makeExcel(excelTemplate,values,assets)});
+    // Permite pintar el progreso y seguir respondiendo en teléfonos.
+    await new Promise(resolve=>setTimeout(resolve,0));
+  }
+  return combined?combined.save({useObjectStreams:false}):files;
+}
+
+export async function checkInventoryTexts(inventory,pdfTemplate) {
+  const issues=[];
+  for(const [index,sheet]of inventory.sheets.entries()){
+    try{
+      const values=documentValues({...inventory,activeSheetId:sheet.id});
+      // Solo se comprueban textos: los dibujos ya se validan al recuperar y editar.
+      await makePdf(pdfTemplate,{...values,graphics:[],sketch:{strokes:[]}},{});
+    }catch(error){
+      const tab=/observaciones del reverso|reverso|renglones/i.test(error.message)?'sketch':/estación|casilla/i.test(error.message)?'stations':'header';
+      const key=Object.entries(labels).find(([,label])=>error.message.includes(`«${label}»`))?.[0];
+      const headerFields={number:'inventory-number',code:'road-code',from:'road-from',to:'road-to',route:'road-route',lengthKm:'road-length',provinceName:'road-province',cantonName:'road-canton'};
+      issues.push({sheetId:sheet.id,sheetNumber:index+1,message:error.message,tab,
+        ...(tab==='header'&&headerFields[key]?{field:headerFields[key]}:tab==='sketch'?{field:'back-observations'}:{})});
+    }
+  }
+  return issues;
 }

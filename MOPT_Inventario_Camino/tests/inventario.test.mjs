@@ -177,7 +177,7 @@ test('todos los identificadores de interfaz usados por el controlador existen', 
   const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
   assert.equal(new Set(ids).size, ids.length);
   for (const [, element] of source.matchAll(/\$\('([\w-]+)'\)/g)) {
-    // Este botón se incorpora únicamente cuando hay un borrador dañado.
-    if (element !== 'recover-draft') assert.ok(ids.includes(element), `No existe #${element}`);
+    // Los botones de recuperación se incorporan únicamente al fallar el guardado.
+    if (!['recover-draft','storage-copy'].includes(element)) assert.ok(ids.includes(element), `No existe #${element}`);
   }
 });

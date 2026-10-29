@@ -37,6 +37,7 @@ test('agregar con campos opcionales vacíos, editar y eliminar conserva el rengl
 test('un número inválido impide guardar y cambiar de hoja conserva formularios independientes',async()=>{
   const s=screen();s.node('station-km').value='4,9';s.node('station-number').value='dos';await s.submit();
   assert.equal(s.commits,0);assert.equal(s.node('station-error').hidden,false);
+  s.node('station-form').events.input();assert.equal(s.inventory.sheets[0].stationDraft.station,'4,9');
   s.inventory.activeSheetId=s.inventory.sheets[1].id;s.ui.refresh();
   assert.equal(s.node('station-km').value,'');s.node('station-km').value='12,678';await s.submit();
   assert.equal(s.inventory.sheets[1].stations.length,1);assert.equal(s.inventory.sheets[0].stations.length,0);
@@ -55,7 +56,7 @@ test('las estaciones equivalentes no se repiten al agregar, editar, cambiar de h
   const s=screen();s.node('station-km').value='2,870';await Promise.all([s.submit(),s.submit()]);
   const first=s.inventory.sheets[0].stations[0];assert.equal(s.commits,1);
   for(const value of ['2.870','02,87','2,870']){s.node('station-km').value=value;await s.submit();assert.equal(s.commits,1);assert.match(s.node('station-error').textContent,/ya existe/i);}
-  await s.click({editStation:first.id});s.node('station-km').value='2.87';await s.submit();assert.equal(s.commits,2);
+  await s.click({editStation:first.id});const beforeEdit=s.commits;s.node('station-km').value='2.87';await s.submit();assert.equal(s.commits,beforeEdit+1);
   s.node('station-km').value='2,864';await s.submit();const second=s.inventory.sheets[0].stations[0];
   await s.click({editStation:second.id});s.node('station-km').value='2,870';await s.submit();
   assert.equal(s.inventory.sheets[0].stations.length,2);assert.equal(s.inventory.sheets[0].stations[0].station,'2,864');
@@ -90,4 +91,13 @@ test('las pestañas cambian de panel con clic y teclado sin mezclar el formulari
   s.tabs[1].events.keydown({key:'ArrowLeft',preventDefault(){}});
   assert.equal(s.node('panel-header').hidden,false);assert.equal(s.node('panel-stations').hidden,true);
   assert.equal(s.tabs[0].tabIndex,0);
+});
+
+test('escribir guarda un formulario incompleto y descartarlo no registra una estación',()=>{
+  const s=screen();s.node('station-km').value='2,';s.node('station-observations').value='Revisión pendiente';
+  s.node('station-form').events.input();const first=s.inventory.sheets[0];
+  assert.equal(first.stationDraft.station,'2,');assert.equal(first.stations.length,0);assert.equal(s.node('station-cancel').hidden,false);
+  s.inventory.activeSheetId=s.inventory.sheets[1].id;s.ui.refresh();assert.equal(s.node('station-km').value,'');
+  s.inventory.activeSheetId=first.id;s.ui.refresh();assert.equal(s.node('station-km').value,'2,');assert.equal(s.node('station-observations').value,'Revisión pendiente');
+  s.node('station-cancel').events.click();assert.equal(first.stationDraft,null);assert.equal(first.stations.length,0);assert.equal(s.node('station-km').value,'');
 });

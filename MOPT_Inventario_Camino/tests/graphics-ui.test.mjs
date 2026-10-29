@@ -45,6 +45,35 @@ function focusEditor() {
     key(key){s.node('graphic-focus-dialog').events.keydown({key,shiftKey:false,preventDefault(){},target:{closest:()=>s.node('graphic-focus-canvas')}});},
     touch(type,pointerId,x,y,id){s.pointer(type,{focus:true,pointerType:'touch',pointerId,x,y,id});}};
 }
+test('el bloqueo individual protege arrastre, pellizco, teclado y herramientas hasta desbloquear la figura',()=>{
+  const s=focusEditor();s.click('graphic-focus-symbol');s.click('graphic-focus-lock');
+  assert.equal(s.item.locked,true);const before=structuredClone(s.sheet.graphics),view=s.node('graphic-focus-canvas').getAttribute('viewBox');
+  for(const id of ['graphic-focus-smaller','graphic-focus-larger','graphic-focus-left','graphic-focus-right','graphic-focus-longer','graphic-focus-thicker','graphic-focus-delete','graphic-focus-duplicate','graphic-focus-move-left','graphic-focus-move-right','graphic-focus-move-up','graphic-focus-move-down']){
+    assert.equal(s.node(id).disabled,true,id);s.click(id);assert.deepEqual(s.sheet.graphics,before,id);
+  }
+  for(const key of ['ArrowLeft','ArrowRight','Delete','Backspace'])s.key(key);
+  const x=(s.item.x+s.item.width/2)*GRAPH_FRAME.width,y=(s.item.y+s.item.height/2)*s.height;
+  s.touch('pointerdown',1,x,y,s.item.id);s.touch('pointermove',1,x+5,y+5);s.touch('pointerup',1,x+5,y+5);
+  assert.deepEqual(s.sheet.graphics,before);assert.equal(s.node('graphic-focus-canvas').getAttribute('viewBox'),view);
+  assert.doesNotMatch(s.node('graphic-focus-canvas').innerHTML,/data-handle=/);
+  s.click('graphic-focus-lock');assert.equal(s.item.locked,undefined);s.click('graphic-focus-move-right');assert.ok(s.item.x>before.free[0].x);
+});
+test('las flechas táctiles mueven la figura con la cámara fija y obedecen el bloqueo Mover y zoom',()=>{
+  const s=focusEditor(),before={...s.item},view=s.node('graphic-focus-canvas').getAttribute('viewBox');
+  s.click('graphic-focus-move-right');s.click('graphic-focus-lock');assert.deepEqual(s.item,before);
+  s.click('graphic-focus-symbol');s.click('graphic-focus-move-right');s.click('graphic-focus-move-down');
+  assert.ok(s.item.x>before.x);assert.ok(s.item.y>before.y);assert.equal(s.item.width,before.width);assert.equal(s.item.height,before.height);assert.equal(s.item.rotation,before.rotation);
+  assert.equal(s.node('graphic-focus-canvas').getAttribute('viewBox'),view);
+  s.click('graphic-focus-undo');assert.equal(s.sheet.graphics.free[0].y,before.y);
+});
+test('el ajuste fino muestra sus flechas fuera del menú y permite ocultarlas para recuperar espacio',()=>{
+  const s=focusEditor();assert.equal(s.node('graphic-focus-precision').hidden,true);
+  s.click('graphic-focus-symbol');s.click('graphic-focus-precision-toggle');
+  assert.equal(s.node('graphic-focus-menu').hidden,true);assert.equal(s.node('graphic-focus-precision').hidden,false);
+  s.click('graphic-focus-view');assert.equal(s.node('graphic-focus-precision').hidden,true);
+  s.click('graphic-focus-symbol');assert.equal(s.node('graphic-focus-precision').hidden,false);
+  s.click('graphic-focus-precision-close');assert.equal(s.node('graphic-focus-precision').hidden,true);
+});
 test('Símbolo bloquea la cámara aunque ambos dedos comiencen en el fondo, en la carretera completa',()=>{
    {
     const s=focusEditor();s.click('graphic-focus-symbol');

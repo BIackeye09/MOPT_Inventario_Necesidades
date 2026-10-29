@@ -1,18 +1,18 @@
 # Subir el inventario completo a GitHub
 
-Versión 1.0.0 · 29 de octubre de 2026.
+Versión 1.1.0 · 29 de octubre de 2026.
 
-El paquete completo contiene **95 archivos**. El editor único de la carretera completa, el croquis, Excel, PDF, las fuentes, las pruebas, los ejemplos y el servidor Dart están incluidos. Los símbolos y sus datos se agruparon en `dist/js/symbol-catalog.js`; sus imágenes conservan exactamente los bytes originales.
+El paquete completo contiene **99 archivos**. El editor único de la carretera completa, el croquis, Excel, PDF, las fuentes, las pruebas, los ejemplos y el servidor Dart están incluidos. Los símbolos y sus datos se agruparon en `dist/js/symbol-catalog.js`; sus imágenes conservan exactamente los bytes originales.
 
 GitHub permite cargar hasta 100 archivos **por subida desde el navegador**. Ese número no es el límite total del repositorio.
 
 ## Opción 1: una sola subida
 
-1. Descomprimí `MOPT_Inventario_Camino_v1.0.0.zip`.
+1. Descomprimí `MOPT_Inventario_Camino_v1.1.0.zip`.
 2. Entrá a la carpeta `MOPT_Inventario_Camino` que queda dentro.
 3. En la raíz de tu repositorio, elegí **Add file → Upload files**.
 4. Arrastrá el contenido de esa carpeta, conservando los nombres y las carpetas. No arrastrés el ZIP ni agregués otra carpeta exterior con el nombre del proyecto.
-5. Escribí un mensaje como `Actualizar inventario a 1.0.0` y guardá los cambios.
+5. Escribí un mensaje como `Actualizar inventario a 1.1.0` y guardá los cambios.
 
 ## Opción 2: tres cargas pequeñas
 
@@ -20,10 +20,10 @@ Hacé cada carga desde la misma raíz del repositorio y confirmala antes de inic
 
 | Carga | Contenido | Archivos |
 | --- | --- | ---: |
-| 1 · Aplicación | Carpeta `dist/` | 49 |
-| 2 · Desarrollo | Carpetas `scripts/`, `tests/` y `herramientas/` | 24 |
+| 1 · Aplicación | Carpeta `dist/` | 52 |
+| 2 · Desarrollo | Carpetas `scripts/`, `tests/` y `herramientas/` | 25 |
 | 3 · Documentación y ejemplos | `ejemplos/`, `referencias/`, `.vscode/` y los seis archivos de la raíz | 22 |
-| **Total** | **Proyecto completo** | **95** |
+| **Total** | **Proyecto completo** | **99** |
 
 Los seis archivos de la raíz son `.gitignore`, `README.md`, `LEEME_PRIMERO.txt`, `SUBIR_A_GITHUB.md`, `iniciar.cmd` y `package.json`.
 
@@ -49,7 +49,7 @@ Los ejemplos gráficos se llaman ahora `representacion-grafica.xls`, `.pdf` y `.
 
 ## Comprobación
 
-Abrí la web, recargá con conexión y verificá que al pie aparezca **1.0.0**. Probá el editor gráfico de la carretera completa, el croquis, Vista previa, Descargar Excel y Descargar PDF. El borrador sigue guardado en el mismo navegador y dirección.
+Abrí la web, recargá con conexión y verificá que al pie aparezca **1.1.0**. Probá Mis inventarios, la recuperación de un formulario pendiente, el editor gráfico, el croquis, Vista previa y las descargas individuales y conjuntas del menú Más. El borrador sigue guardado en el mismo navegador y dirección.
 
 ## Fuentes oficiales
 

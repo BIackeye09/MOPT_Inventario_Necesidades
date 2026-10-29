@@ -134,3 +134,43 @@ dialog.sketch-dialog{padding:0;background:#fff;box-shadow:none}
   .station-table-wrap{max-height:none;overflow:visible}.station-table,.station-table tbody{display:block;min-width:0;width:100%}.station-table thead{display:none}.station-table tbody tr{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden}.station-table tbody th{grid-column:1/-1;background:#edf4fc;padding:10px 12px}.station-table tbody th small{display:inline;margin-left:10px;font-size:11px}.station-table td{display:block;max-width:none;min-width:0;padding:10px 12px;font-size:14px}.station-table td::before{content:attr(data-label);display:block;color:#586f86;font-size:11px;margin-bottom:3px}.station-table .station-description{grid-column:1/-1;max-width:none}.station-table .station-row-actions{grid-column:1/-1;display:flex;gap:10px;background:#fafcfe}.station-table .station-row-actions::before{display:none}.station-row-actions .text-button{display:inline-flex;justify-content:center;min-width:70px;font-size:13px;margin:0}
   .toast{bottom:calc(80px + env(safe-area-inset-bottom))}.page-footer{font-size:11px}.graphic-editor-open .editor-tabs,.drawing-open .editor-tabs{visibility:hidden}
 }
+
+/* Inventarios y revisión: opciones plegadas, sin añadir paneles al dibujo. */
+.inventory-heading-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.preview-short{display:none!important}
+.document-actions .button .preview-label,.document-actions .button .preview-short{color:inherit;font:inherit;margin:0;max-width:none}
+.document-state-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.document-state-row .document-status{flex:1}.document-state-row .text-button{flex-shrink:0;font-size:12px}
+.document-more{position:relative;order:5;flex:0 0 auto}.document-more>summary{list-style:none;cursor:pointer;white-space:nowrap}
+.document-more>summary::-webkit-details-marker{display:none}.document-more>summary span{display:inline;font-size:17px;color:inherit;margin:0}
+.document-menu{position:absolute;right:0;top:calc(100% + 7px);width:min(310px,calc(100vw - 40px));padding:7px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px #173f6b2b;z-index:30;max-height:65dvh;overflow:auto}
+.document-menu button{display:block;width:100%;text-align:left;border:0;border-radius:6px;background:white;color:var(--blue);font:inherit;font-size:13px;padding:11px 12px;min-height:44px}
+.document-menu button:hover,.document-menu button:focus-visible{background:#edf4fc}.document-menu p{font-size:11px;color:var(--muted);line-height:1.5;padding:0 12px}
+.inventory-dialog{width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain}
+.inventory-dialog-tools{padding:0 25px 16px;display:flex;flex-wrap:wrap;gap:10px}.inventory-dialog-tools .field{flex:1 0 100%;gap:6px;font-size:12px;display:grid}
+.inventory-dialog-tools input{width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--border);border-radius:7px;font:inherit;font-size:16px}
+.inventory-list-status{padding:0 25px;margin:0 0 10px}.inventory-list{padding:0 25px}.inventory-local-note{margin:12px 25px 22px;font-size:12px;color:var(--muted);line-height:1.6}
+.saved-inventory,.review-sheet{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 0;border-top:1px solid var(--border)}
+.saved-inventory>div,.review-sheet>div{min-width:0}.saved-inventory h3,.review-sheet h3{font-size:15px;color:var(--blue);margin:0 0 5px;overflow-wrap:anywhere}
+.saved-inventory p,.review-sheet p{font-size:12px;line-height:1.6;margin:0 0 5px;overflow-wrap:anywhere}.saved-inventory small,.review-sheet small{font-size:11px;color:var(--muted);line-height:1.6}
+.saved-inventory .button,.review-sheet .button{flex-shrink:0}.review-content{padding:0 25px 22px}.review-status{font-size:13px;line-height:1.6;color:var(--blue);margin:0 0 12px}
+.saved-inventory-actions{display:flex;align-items:flex-end;flex-direction:column;gap:5px;flex-shrink:0}.saved-inventory-actions .text-button{font-size:11px;min-height:32px}
+.review-issue{display:flex;align-items:center;justify-content:space-between;gap:15px;width:100%;padding:12px;text-align:left;background:#fff8ea;border:1px solid #e4d4ae;border-radius:7px;margin:0 0 8px;color:#6e501b;min-height:44px;font:inherit;font-size:13px;line-height:1.5}
+.review-issue:hover{background:#fff0ce}.review-issue span:first-child{overflow-wrap:anywhere}.review-content>h3{font-size:15px;color:var(--blue);margin:20px 0 10px}
+.graphic-position-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:12px}.graphic-nudge{display:grid;grid-template-columns:repeat(4,44px);gap:6px}
+.graphic-nudge .button{width:44px;height:44px;min-height:44px;padding:5px;font-size:21px}.graphic-snap-option{display:flex;align-items:center;gap:9px;font-size:12px;line-height:1.5;min-height:44px;cursor:pointer;flex-basis:100%}
+.graphic-snap-option input{width:20px;height:20px;min-height:20px;flex-shrink:0;accent-color:var(--blue)}.graphic-position-controls>p{margin:0}.graphic-symbol.is-locked{cursor:default}
+.graphic-focus-dialog[data-precision=true]{--focus-dock:126px}.graphic-focus-dock>.graphic-focus-precision{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:5px}.graphic-focus-dock>.graphic-focus-precision[hidden]{display:none}.graphic-focus-precision .icon-button{width:44px;height:44px;border:1px solid var(--border);border-radius:7px;background:#f5f8fc;font-size:22px;color:var(--blue)}
+@media(max-width:700px),(max-height:500px) and (max-width:1000px){
+  .page-heading{flex-wrap:nowrap;align-items:center}.page-heading>div:first-child{flex:1;min-width:0}.page-heading h1{font-size:17px;line-height:1.35}.inventory-heading-actions{margin-left:0;gap:6px}.inventory-heading-actions #open-inventories{min-height:44px;font-size:12px;padding:8px}.inventory-heading-actions .wide-label{display:none}
+  .document-actions .document-more>summary{min-width:44px;padding:8px 6px;font-size:12px;gap:3px}.document-actions #open-preview{flex:1.25}.document-actions #install-app{flex-basis:38px}
+  .document-state-row{display:block}.document-state-row .document-status{margin-bottom:0}.document-state-row .text-button{min-height:36px;padding:4px 0;font-size:12px}
+  .inventory-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 16px)}.inventory-dialog .dialog-heading{padding:18px 16px 14px}.inventory-dialog-tools{padding:0 16px 14px}.inventory-dialog-tools>.button{flex:1;font-size:12px}
+  .inventory-list-status,.inventory-list{padding-inline:16px}.inventory-local-note{margin-inline:16px}.saved-inventory,.review-sheet{align-items:flex-start;flex-direction:column;gap:9px}.saved-inventory .button,.review-sheet .button{align-self:flex-end}
+  .review-content{padding:0 16px 18px}.review-issue{font-size:13px}.graphic-focus-sheet .graphic-position-controls{margin-top:0;margin-bottom:14px}.graphic-focus-sheet .graphic-snap-option{font-size:13px}
+  .saved-inventory-actions{align-self:stretch;flex-direction:row;justify-content:space-between;align-items:center}.saved-inventory-actions .text-button{min-height:44px}
+}
+@media(max-width:370px){
+  .document-actions .preview-label{display:none}.document-actions .preview-short{display:inline!important}
+  .document-actions .document-more>summary{font-size:0;min-width:36px}.document-actions .document-more>summary span{font-size:20px}
+}

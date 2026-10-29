@@ -1,5 +1,5 @@
 // Un solo editor sobre las medidas originales del DPA-301.
-import {SYMBOLS,GRAPH_FRAME,GRAPH_LIMIT,createGraphics,createGraphic,constrainGraphic,stretchGraphic,symbolById,symbolUrl,stationFrame,fitGraphicView,constrainGraphicView,zoomGraphicView} from './graphics-model.js';
+import {SYMBOLS,GRAPH_FRAME,GRAPH_LIMIT,createGraphics,createGraphic,constrainGraphic,stretchGraphic,snapGraphic,symbolById,symbolUrl,stationFrame,fitGraphicView,constrainGraphicView,zoomGraphicView} from './graphics-model.js';
 import {formatStation} from './stations.js';
 import {sheetLabel} from './model.js';
 import {createId} from './ids.js';
@@ -12,14 +12,14 @@ const phoneLayout=()=>Boolean(globalThis.matchMedia?.('(max-width: 700px), (max-
 
 export function setupGraphics({getInventory,commit,notify}) {
   let sheetId='',signature='',selected=null,drag=null;
-  let full=null,viewDrag=null;
+  let full=null,viewDrag=null,snap=false;
   // El modo elegido es un bloqueo: ninguna herramienta lo cambia por su cuenta.
   const symbolsEnabled=()=>!full||full.interaction==='symbol';
   const histories=new Map();
   const activeSheet=()=>getInventory().sheets.find(s=>s.id===getInventory().activeSheetId);
   function state(){const sheet=activeSheet();return sheet.graphics??=(createGraphics());}
   const list=()=>state().free;
-  const historyKey=()=>activeSheet().id;
+  const historyKey=()=>`${getInventory().id}:${activeSheet().id}`;
   const history=()=>{const key=historyKey();if(!histories.has(key))histories.set(key,[]);return histories.get(key);};
   function remember(items){const h=history();h.push(copy(items));if(h.length>30)h.shift();}
   const chosen=()=>list().find(item=>item.id===selected);
@@ -27,11 +27,14 @@ export function setupGraphics({getInventory,commit,notify}) {
   function point(event,svg){return new DOMPoint(event.clientX,event.clientY).matrixTransform(svg.getScreenCTM().inverse());}
   function controls() {
     const item=chosen();
-    $('graphic-selected').textContent=item?symbolById(item.symbolId).label:'Seleccioná un símbolo para moverlo, girarlo o cambiar su tamaño.';
-    for(const id of ['graphic-smaller','graphic-larger','graphic-duplicate','graphic-delete','graphic-rotate-left','graphic-rotate-right','graphic-angle','graphic-rotation-reset'])$(id).disabled=!item;
+    $('graphic-selected').textContent=item?symbolById(item.symbolId).label+(item.locked?' · Bloqueado':''):'Seleccioná un símbolo para moverlo, girarlo o cambiar su tamaño.';
+    for(const id of ['graphic-smaller','graphic-larger','graphic-duplicate','graphic-delete','graphic-rotate-left','graphic-rotate-right','graphic-angle','graphic-rotation-reset','graphic-move-left','graphic-move-right','graphic-move-up','graphic-move-down'])$(id).disabled=!item||Boolean(item.locked);
+    $('graphic-lock').disabled=!item;$('graphic-lock').textContent=item?.locked?'Desbloquear símbolo':'Bloquear símbolo';
+    $('graphic-lock').setAttribute('aria-pressed',String(Boolean(item?.locked)));
+    $('graphic-snap').checked=snap;
     $('graphic-angle').value=String(item?.rotation||0);
     $('graphic-undo').disabled=history().length===0;
-    $('graphic-count').textContent=`${list().length} símbolos`;
+    $('graphic-count').textContent=`${list().length} ${list().length===1?'símbolo':'símbolos'}`;
     focusControls();
   }
   function paint(svg) {
@@ -55,10 +58,10 @@ export function setupGraphics({getInventory,commit,notify}) {
     const padding=12*unitsPerPixel(svg);
     const symbols=items.map(item=>{
       const x=item.x*GRAPH_FRAME.width,y=item.y*height,w=item.width*GRAPH_FRAME.width,h=item.height*height;
-      const peek=isFocus(svg)&&full.interaction==='view'&&item.id===selected?`<rect x="${x}" y="${y}" width="${w}" height="${h}" class="graphic-selection" pointer-events="none"/>`:'';
-      return `<g data-graphic-id="${esc(item.id)}" class="graphic-symbol" transform="rotate(${item.rotation||0} ${x+w/2} ${y+h/2})"><rect x="${x-padding}" y="${y-padding}" width="${w+2*padding}" height="${h+2*padding}" fill="transparent"/><image href="${symbolUrl(item.symbolId)}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none" pointer-events="none" draggable="false"/>${peek}<title>${esc(symbolById(item.symbolId).label)} · ${item.rotation||0}°</title></g>`;
+      const peek=item.id===selected&&(item.locked||isFocus(svg)&&full.interaction==='view')?`<rect x="${x}" y="${y}" width="${w}" height="${h}" class="graphic-selection" pointer-events="none"/>`:'';
+      return `<g data-graphic-id="${esc(item.id)}" class="graphic-symbol${item.locked?' is-locked':''}" transform="rotate(${item.rotation||0} ${x+w/2} ${y+h/2})"><rect x="${x-padding}" y="${y-padding}" width="${w+2*padding}" height="${h+2*padding}" fill="transparent"/><image href="${symbolUrl(item.symbolId)}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none" pointer-events="none" draggable="false"/>${peek}<title>${esc(symbolById(item.symbolId).label)} · ${item.rotation||0}°${item.locked?' · Bloqueado':''}</title></g>`;
     }).join('');
-    const item=items.find(item=>item.id===selected&&(!isFocus(svg)||full.interaction==='symbol'));let selection='';
+    const item=items.find(item=>item.id===selected&&!item.locked&&(!isFocus(svg)||full.interaction==='symbol'));let selection='';
     if(item) {
       const x=item.x*GRAPH_FRAME.width,y=item.y*height,w=item.width*GRAPH_FRAME.width,h=item.height*height;
       const unit=unitsPerPixel(svg),inFocus=isFocus(svg),handle=inFocus?8*unit:2.2,hit=Math.max(handle,(inFocus?24:12)*unit);
@@ -111,13 +114,13 @@ export function setupGraphics({getInventory,commit,notify}) {
   }
   function resize(factor) {
     if(!symbolsEnabled())return;
-    const item=chosen();if(!item)return;
+    const item=chosen();if(!item||item.locked)return;
     const width=Math.min(1,item.width*factor),height=Math.min(1,item.height*factor),before=copy(list());
     Object.assign(item,constrainGraphic(item,{width,height,x:item.x+(item.width-width)/2,y:item.y+(item.height-height)/2},frame().height));changed(before);
   }
   function stretch(axis,factor) {
     if(!symbolsEnabled())return;
-    const item=chosen();if(!item)return;
+    const item=chosen();if(!item||item.locked)return;
     const before=copy(list()),next=stretchGraphic(item,axis,item[axis]*factor,frame().height);
     if(JSON.stringify(item)===JSON.stringify(next))return;
     Object.assign(item,next);changed(before);
@@ -125,7 +128,7 @@ export function setupGraphics({getInventory,commit,notify}) {
   // Controles alternativos al gesto táctil y a la flecha de giro.
   function rotate(value) {
     if(!symbolsEnabled())return;
-    const item=chosen();if(!item)return;
+    const item=chosen();if(!item||item.locked)return;
     if(value===''||!Number.isFinite(Number(value))){controls();notify('Ingresá un ángulo en grados.');return;}
     const before=copy(list()),next=constrainGraphic(item,{rotation:Number(value)},frame().height);
     if(JSON.stringify(item)===JSON.stringify(next)){controls();return;}
@@ -133,13 +136,22 @@ export function setupGraphics({getInventory,commit,notify}) {
   }
   function duplicate() {
     if(!symbolsEnabled())return;
-    const item=chosen();if(!item||list().length>=GRAPH_LIMIT)return;
+    const item=chosen();if(!item||item.locked||list().length>=GRAPH_LIMIT)return;
     const before=copy(list()),next=constrainGraphic({...item,id:createId()},{x:item.x+.04,y:item.y+.015},frame().height);
     list().push(next);selected=next.id;changed(before);
   }
   function remove() {
     if(!symbolsEnabled())return;
-    if(!chosen())return;const before=copy(list());state().free=list().filter(item=>item.id!==selected);selected=null;changed(before);
+    if(!chosen()||chosen().locked)return;const before=copy(list());state().free=list().filter(item=>item.id!==selected);selected=null;changed(before);
+  }
+  function nudge(dx,dy){
+    const item=chosen();if(!symbolsEnabled()||!item||item.locked)return;
+    const before=copy(list()),next=constrainGraphic(item,{x:item.x+dx/GRAPH_FRAME.width,y:item.y+dy/GRAPH_FRAME.height});
+    if(JSON.stringify(item)===JSON.stringify(next))return;Object.assign(item,next);changed(before);
+  }
+  function toggleLock(){
+    if(!symbolsEnabled())return;abortGesture();const item=chosen();if(!item)return;
+    const before=copy(list());if(item.locked)delete item.locked;else item.locked=true;changed(before);
   }
   function unitsPerPixel(svg) {
     // La matriz mide el dibujo real, independiente del ancho de la página.
@@ -168,14 +180,23 @@ export function setupGraphics({getInventory,commit,notify}) {
   function focusControls() {
     if(!full)return;
     const item=chosen(),editing=full.interaction==='symbol';
-    $('graphic-focus-selected').textContent=!editing?'Símbolos bloqueados. Elegí «Símbolo» para editar.':item?symbolById(item.symbolId).label:'Tocá un símbolo en el dibujo para seleccionarlo.';
-    for(const id of ['graphic-focus-smaller','graphic-focus-larger','graphic-focus-longer','graphic-focus-shorter','graphic-focus-thicker','graphic-focus-thinner','graphic-focus-left','graphic-focus-right','graphic-focus-duplicate','graphic-focus-delete'])$(id).disabled=!editing||!item;
+    $('graphic-focus-view-tools').hidden=editing;$('graphic-focus-symbol-tools').hidden=!editing;
+    const precision=Boolean(full.precision&&editing&&item);
+    $('graphic-focus-precision').hidden=!precision;$('graphic-focus-dialog').dataset.precision=String(precision);
+    $('graphic-focus-precision-toggle').disabled=!editing||!item;
+    $('graphic-focus-precision-toggle').setAttribute('aria-pressed',String(Boolean(full.precision)));
+    $('graphic-focus-precision-toggle').textContent=full.precision?'Ocultar flechas del dibujo':'Mostrar flechas sobre el dibujo';
+    $('graphic-focus-selected').textContent=!editing?'Símbolos bloqueados. Elegí «Símbolo» para editar.':item?symbolById(item.symbolId).label+(item.locked?' · Bloqueado':''):'Tocá un símbolo en el dibujo para seleccionarlo.';
+    for(const id of ['graphic-focus-smaller','graphic-focus-larger','graphic-focus-longer','graphic-focus-shorter','graphic-focus-thicker','graphic-focus-thinner','graphic-focus-left','graphic-focus-right','graphic-focus-duplicate','graphic-focus-delete','graphic-focus-move-left','graphic-focus-move-right','graphic-focus-move-up','graphic-focus-move-down'])$(id).disabled=!editing||!item||Boolean(item.locked);
+    $('graphic-focus-lock').disabled=!editing||!item;$('graphic-focus-lock').textContent=item?.locked?'Desbloquear símbolo':'Bloquear símbolo';
+    $('graphic-focus-lock').setAttribute('aria-pressed',String(Boolean(item?.locked)));
+    $('graphic-focus-snap').checked=snap;$('graphic-focus-snap').disabled=!editing;
     $('graphic-focus-undo').disabled=!editing||!history().length;
     $('graphic-focus-add').disabled=!editing;
     for(const id of ['graphic-focus-fit','graphic-focus-working','graphic-focus-zoom-in','graphic-focus-zoom-out'])$(id).disabled=editing;
     $('graphic-focus-view').setAttribute('aria-pressed',String(full.interaction==='view'));
     $('graphic-focus-symbol').setAttribute('aria-pressed',String(full.interaction==='symbol'));
-    $('graphic-focus-hint').textContent=editing?'Laterales: largo. Arriba/abajo: grosor. Vista fija.':'Solo vista: mover y zoom. Símbolos bloqueados.';
+    $('graphic-focus-hint').textContent=editing?(item?.locked?'Figura bloqueada. Desbloqueala en ☰ para editar.':'Laterales: largo. Arriba/abajo: grosor. Vista fija.'):'Solo vista: mover y zoom. Símbolos bloqueados.';
     $('graphic-focus-zoom').textContent=`${Math.round((full.base?.width/full.box?.width||1)*100)}%`;
   }
   function focusPanels(which) {
@@ -316,7 +337,7 @@ export function setupGraphics({getInventory,commit,notify}) {
         viewport,x:event.clientX,y:event.clientY,left:viewport.scrollLeft,top:viewport.scrollTop};
       svg.setPointerCapture(event.pointerId);event.preventDefault();return;
     }
-    selected=item.id;const box=frame();
+    selected=item.id;if(item.locked){paintAll();svg.focus({preventScroll:true});event.preventDefault();return;}const box=frame();
     drag={svg,height:box.height,pointers:new Map([[event.pointerId,p]]),before:copy(list()),id:item.id,
       handle};
     rebaseGesture();svg.setPointerCapture(event.pointerId);svg.focus({preventScroll:true});paintAll();event.preventDefault();
@@ -327,7 +348,7 @@ export function setupGraphics({getInventory,commit,notify}) {
     if(drag.kind==='pan') {
       drag.viewport.scrollLeft=drag.left+drag.x-event.clientX;drag.viewport.scrollTop=drag.top+drag.y-event.clientY;event.preventDefault();return;
     }
-    const item=chosen();if(!item)return;
+    const item=chosen();if(!item||item.locked)return;
     const p=point(event,drag.svg);drag.pointers.set(event.pointerId,p);
     const dx=(p.x-drag.start.x)/GRAPH_FRAME.width,dy=(p.y-drag.start.y)/drag.height,original=drag.item;
     let patch;
@@ -356,7 +377,9 @@ export function setupGraphics({getInventory,commit,notify}) {
       patch={width,height,x:original.x+(original.width-width)/2+(shiftX*c-shiftY*s)/GRAPH_FRAME.width,
         y:original.y+(original.height-height)/2+(shiftX*s+shiftY*c)/drag.height};
     } else patch={x:original.x+dx,y:original.y+dy};
-    Object.assign(item,constrainGraphic(original,patch,drag.height));
+    let next=constrainGraphic(original,patch,drag.height);
+    if(snap&&!drag.handle&&drag.pointers.size===1)next=snapGraphic(next,activeSheet().stations||[],8*unitsPerPixel(drag.svg));
+    Object.assign(item,next);
     paint(drag.svg);controls();event.preventDefault();
   }
   function finish(event,cancel=false) {
@@ -374,7 +397,8 @@ export function setupGraphics({getInventory,commit,notify}) {
   }
   function refresh() {
     const sheet=activeSheet();if(!sheet)return;
-    if(sheetId!==sheet.id){if(drag){const previous=drag;drag=null;release(previous);}sheetId=sheet.id;selected=null;signature='';}
+    const key=`${getInventory().id}:${sheet.id}`;
+    if(sheetId!==key){if(drag){const previous=drag;drag=null;release(previous);}sheetId=key;selected=null;signature='';}
     state();
     if(full&&full.sheetId!==sheet.id)closeFocus();
     $('graphic-sheet').textContent=sheetLabel(getInventory());
@@ -405,7 +429,7 @@ export function setupGraphics({getInventory,commit,notify}) {
     if(isFocus(svg)&&full.interaction==='view') {
       if(direction){event.preventDefault();const unit=unitsPerPixel(svg);setFocusView({...full.box,x:full.box.x+direction[0]*20*unit,y:full.box.y+direction[1]*20*unit});}return;
     }
-    if(!chosen())return;
+    if(!chosen()||chosen().locked)return;
     const handle=event.target.dataset?.handle;
     if(['e','w','n','s'].includes(handle)&&direction) {
       event.preventDefault();const axis=handle==='e'||handle==='w'?'width':'height';
@@ -426,6 +450,11 @@ export function setupGraphics({getInventory,commit,notify}) {
   $('graphic-rotation-reset').addEventListener('click',()=>rotate(0));
   $('graphic-duplicate').addEventListener('click',duplicate);$('graphic-delete').addEventListener('click',remove);
   $('graphic-undo').addEventListener('click',undoGraphic);
+  for(const prefix of ['graphic','graphic-focus']){
+    $(prefix+'-lock').addEventListener('click',toggleLock);
+    $(prefix+'-snap').addEventListener('change',event=>{if(prefix==='graphic-focus'&&!symbolsEnabled())return;snap=Boolean(event.target.checked);controls();});
+    for(const [direction,dx,dy]of [['left',-1,0],['right',1,0],['up',0,-1],['down',0,1]])$(prefix+'-move-'+direction).addEventListener('click',()=>nudge(dx,dy));
+  }
   $('graphic-open-full').addEventListener('click',()=>openFocus());$('graphic-focus-close').addEventListener('click',closeFocus);
   $('graphic-focus-view').addEventListener('click',()=>changeFocusMode('view'));$('graphic-focus-symbol').addEventListener('click',()=>changeFocusMode('symbol'));
   $('graphic-focus-add').addEventListener('click',()=>{if(full?.interaction==='symbol')focusPanels($('graphic-focus-palette').hidden?'symbols':undefined);});
@@ -435,6 +464,8 @@ export function setupGraphics({getInventory,commit,notify}) {
   $('graphic-focus-working').addEventListener('click',()=>{if(full?.interaction==='view'){fitFocus('working');focusPanels();}});
   $('graphic-focus-zoom-in').addEventListener('click',()=>focusZoom(1.4));$('graphic-focus-zoom-out').addEventListener('click',()=>focusZoom(1/1.4));
   $('graphic-focus-undo').addEventListener('click',undoGraphic);
+  $('graphic-focus-precision-toggle').addEventListener('click',()=>{if(full?.interaction!=='symbol'||!chosen())return;full.precision=!full.precision;focusPanels();focusControls();});
+  $('graphic-focus-precision-close').addEventListener('click',()=>{if(full){full.precision=false;focusControls();}});
   for(const [id,action]of [['graphic-focus-smaller',()=>resize(.85)],['graphic-focus-larger',()=>resize(1.15)],['graphic-focus-longer',()=>stretch('width',1.15)],['graphic-focus-shorter',()=>stretch('width',1/1.15)],['graphic-focus-thicker',()=>stretch('height',1.15)],['graphic-focus-thinner',()=>stretch('height',1/1.15)],['graphic-focus-left',()=>rotate((chosen()?.rotation||0)-15)],['graphic-focus-right',()=>rotate((chosen()?.rotation||0)+15)],['graphic-focus-duplicate',duplicate],['graphic-focus-delete',remove]]) {
     $(id).addEventListener('click',()=>{if(full?.interaction==='symbol')action();});
   }

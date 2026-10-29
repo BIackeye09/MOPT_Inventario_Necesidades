@@ -6,12 +6,14 @@ import { setupDocuments } from './document-ui.js';
 import {setupStations,setupEditorTabs} from './station-ui.js';
 import {setupGraphics} from './graphics-ui.js';
 import {setupSketch} from './sketch-ui.js';
+import {InventoryRepository,inventoryHasData,editableFilename} from './inventory-store.js';
+import {setupInventoryUI} from './inventory-ui.js';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const km = value => parseKm(value) === null ? '—' : new Intl.NumberFormat('es-CR', { maximumFractionDigits: 6 }).format(parseKm(value));
 const icon = name => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
-let documents, stations, graphics, sketch, editorTabs;
+let documents, stations, graphics, sketch, editorTabs,repository,inventoryUI;
 let catalog, inventory, toastTimer, storageFailed = false, offlineReady = false;
 let catalogPage = 0, matches = [];
 const PAGE_SIZE = 15;
@@ -34,19 +36,21 @@ function downloadText(text, filename) {
 function persist() {
   inventory.updatedAt = new Date().toISOString();
   try {
-    localStorage.setItem(STORAGE_KEY, toBackup(inventory));
+    repository.save(inventory);
     $('save-status').textContent = 'Guardado en este dispositivo';
     if ($('boot-error').dataset.kind === 'storage') $('boot-error').hidden = true;
-    storageFailed = false;
-  } catch {
+    storageFailed = false;return true;
+  } catch(error) {
     $('save-status').textContent = 'No se pudo guardar';
     if (!$('recover-draft')) {
       $('boot-error').dataset.kind = 'storage';
       $('boot-error').hidden = false;
-      $('boot-error').textContent = 'Este navegador no permite guardar el borrador. Descargá el Excel o PDF de cada hoja antes de cerrar.';
+      const message=error.name==='QuotaExceededError'?'No hay espacio para guardar más trabajo en este navegador.':error.message||'Este navegador no permite guardar el inventario.';
+      $('boot-error').innerHTML=`${esc(message)} Guardá una copia editable antes de cerrar. <button id="storage-copy" class="text-button" type="button">Guardar copia editable</button>`;
+      $('storage-copy').addEventListener('click',()=>downloadText(toBackup(inventory),editableFilename(inventory)));
     }
-    if (!storageFailed) toast('No se pudo guardar el borrador. Descargá el Excel o PDF antes de cerrar.');
-    storageFailed = true;
+    if (!storageFailed) toast('No se pudo guardar. Usá Guardar copia editable para conservar el trabajo.');
+    storageFailed = true;return false;
   }
 }
 
@@ -99,6 +103,7 @@ function renderDerived() {
   stations?.refresh();
   graphics?.refresh();
   sketch?.refresh();
+  inventoryUI?.refresh();
 }
 
 function renderSheets() {
@@ -259,15 +264,18 @@ function bindEvents() {
     const link = event.target.closest('[data-focus-field]');
     if (link) { event.preventDefault(); $(link.dataset.focusField).focus(); }
   });
-  $('new-inventory').addEventListener('click', async () => {
-    const hasData = inventory.road || inventory.number || inventory.surface || inventory.sheets.length > 1 || inventory.sheets.some(s=>s.stations?.length||s.graphics?.free.length||s.graphics?.station.length||s.sketch?.strokes.length||s.backObservations?.trim());
-    if (hasData && !(await confirmAction('Crear un nuevo inventario', 'Se reemplazará el inventario actual, incluidos sus dibujos y observaciones. Descargá primero el Excel o PDF de las hojas que necesités conservar.', 'Crear inventario'))) return;
-    inventory = createInventory();
-    commit({ form: true, sheets: true });
-    editorTabs.select('header');
-    toast('Nuevo inventario creado. Hoja 1 de 1.');
-    $('road-picker').focus();
-  });
+  $('new-inventory').addEventListener('click',()=>{try{newInventory();}catch(error){toast(error.message);}});
+}
+
+function requireSaved(){if(!persist())throw new Error('No se pudo guardar el trabajo actual. Descargá su copia editable antes de cambiar de inventario.');}
+function showInventory(next){
+  inventory=next;clearValidation();renderForm();renderSheets();renderDerived();editorTabs.select('header');
+  $('save-status').textContent='Inventario recuperado';
+}
+function newInventory(){
+  requireSaved();
+  if(!inventoryHasData(inventory)){editorTabs.select('header');toast('El inventario vacío ya está listo para comenzar.');$('road-picker').focus();return;}
+  showInventory(repository.create());toast('Nuevo inventario creado. El anterior sigue en Mis inventarios.');$('road-picker').focus();
 }
 
 function updateConnection() {
@@ -295,10 +303,11 @@ async function boot() {
     catalog = await response.json();
     if (catalog.version !== APP_VERSION || !Array.isArray(catalog.roads)) throw new Error('El catálogo no es compatible con esta versión.');
     inventory = createInventory();
+    repository=new InventoryRepository({getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value),removeItem:key=>localStorage.removeItem(key)},catalog);
     let raw;
     try {
       raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) inventory = fromBackup(raw, catalog);
+      inventory=repository.current()||inventory;
     } catch {
       if (raw) {
         // Una recuperación fallida no debe borrar silenciosamente el borrador anterior.
@@ -319,8 +328,19 @@ async function boot() {
     graphics=setupGraphics({getInventory:()=>inventory,commit,notify:toast});
     sketch=setupSketch({getInventory:()=>inventory,commit,notify:toast,confirmAction});
     documents = setupDocuments({ getInventory: () => inventory, notify: toast });
+    inventoryUI=setupInventoryUI({getInventory:()=>inventory,repository,saveCurrent:persist,onNew:newInventory,
+      onOpen:id=>{if(id===inventory.id)return;requireSaved();showInventory(repository.open(id));toast('Inventario abierto con sus hojas y dibujos.');},
+      onImport:raw=>{fromBackup(raw,catalog);requireSaved();showInventory(repository.import(raw));},
+      navigate:issue=>{
+        if(issue.sheetId&&inventory.sheets.some(sheet=>sheet.id===issue.sheetId))inventory.activeSheetId=issue.sheetId;
+        commit({sheets:true});editorTabs.select(issue.tab||'header');
+        if(issue.stationId)stations.edit(issue.stationId);
+        else if(issue.field)$(issue.field)?.focus();
+        else $(`tab-${issue.tab||'header'}`)?.focus();
+      },checkTexts:inventory=>documents.checkTexts(inventory),confirmAction,notify:toast});
     $('editor').setAttribute('aria-busy', 'false');
     $('save-status').textContent = raw && !$('recover-draft') ? 'Borrador recuperado' : 'Listo para completar';
+    if(!$('recover-draft'))persist();
     window.addEventListener('online', updateConnection);
     window.addEventListener('offline', updateConnection);
     updateConnection();
