@@ -1,91 +1,52 @@
 INVENTARIO DE NECESIDADES DEL CAMINO · MOPT
-Versión 0.8.4 · 28/10/2026
+Versión final 1.0.0 · 29/10/2026
 
 PARA INICIAR
 1. Descomprimí toda la carpeta.
 2. Abrí una terminal dentro del proyecto.
 3. Ejecutá: dart herramientas/servir.dart
 4. Abrí http://localhost:8081 y mantené abierta la terminal.
-
 También podés usar Live Server sobre dist/index.html. La instalación como
-app requiere HTTPS o localhost. El puerto 8081 evita el conflicto con el
-reporte que utiliza 8080.
+app requiere HTTPS o localhost. El puerto 8081 evita el conflicto con el reporte.
 
-CAMBIOS DE ESTA VERSIÓN
-- Estaciones: una sola coma o punto y de 1 a 3 decimales son obligatorios.
-  Ejemplos: 2,870; 2.864; 0,0. Un entero se escribe como 2,0.
-- No se repite una estación en el mismo inventario, aunque cambie el
-  separador, los ceros o la hoja: 2,870 y 2.87 son la misma estación.
-- Cada hoja se ordena de menor a mayor, desde abajo. Agregar y editar
-  conserva los detalles y la asociación de sus símbolos del Caso 2.
-- Los registros repetidos de borradores anteriores se señalan para
-  corregirlos, sin eliminar datos automáticamente.
-- En ambos casos, estirá el largo sin engrosar usando los tiradores laterales.
-  Arriba y abajo cambiá el grosor conservando el largo. Se usan con un dedo,
-  incluso en figuras pequeñas o giradas; dos dedos escalan toda la imagen.
-- En ☰ también están Alargar, Acortar, Más grosor y Menos grosor.
-- Caso 1: líneas horizontales azules que delimitan el renglón de cada
-  estación registrada, en la ruta principal y en el editor de teléfono.
-  Son guías visuales; no se exportan ni bloquean el arrastre de los símbolos.
-- Interfaz móvil: secciones abajo, descargas en una fila y campos legibles.
-- Editor gráfico a pantalla completa, con dos modos independientes:
-  Mover y zoom: un dedo mueve la vista; dos dedos acercan o alejan.
-  Símbolo: un dedo mueve una figura; dos dedos cambian su tamaño.
-- Mover y zoom bloquea los símbolos y sus herramientas. Símbolo deja la
-  vista fija, incluso al arrastrar o pellizcar el fondo. No cambia solo de modo.
-- En Símbolo, Agregar abre la lista; ☰ reúne las herramientas adicionales.
-- Gráficos y croquis llenan la ventana de la app sin el aviso nativo que
-  aparecía al solicitar pantalla completa al navegador.
-- El Caso 2 permite cambiar de estación desde el selector del editor.
-- Tocar una miniatura abre el editor; recorrer la página no mueve figuras.
-- Croquis sin barras: solo papel blanco y acceso flotante al menú ☰.
-- Herramientas y Volver a la app dentro de ☰; se ocultan al dibujar.
-- Símbolos girados junto a los bordes, sin bloquearlos por espacio invisible.
-- Alcantarillas del Caso 2 extendidas al ancho de la calzada al agregarlas.
-  Se pueden ajustar después; los símbolos guardados mantienen su tamaño.
-- Proyecto completo: 97 archivos. Aplicación dist/: 49 archivos.
-- Simbología agrupada en un catálogo, con las mismas imágenes originales.
-- Ver SUBIR_A_GITHUB.md para subir todo o hacerlo por tres segmentos.
-- Sin lateral de instalación/respaldo. Instalar queda junto a Vista previa.
-- Hojas arriba, en un selector compacto con Agregar y Eliminar.
-- En modo Símbolo, dos dedos para agrandar o achicar en ambos casos:
-  apoyá el primero sobre el símbolo y después el segundo sobre el dibujo.
-- Mayor área de agarre y arrastre con un dedo, incluso sobre líneas finas.
-- Caso 1 con página ampliada al alto del dibujo, conservando su ancho.
-  Se usa el desplazamiento normal de la página, sin otro scroll dentro de la ruta.
-- Giro con flecha circular y controles exactos desplegables.
-- Croquis en pantalla blanca aparte; podés girar el teléfono y volver con
-  ☰ > Volver a la app. Lápiz, borrador parcial, tamaños, zoom y Deshacer.
-- Observaciones del reverso fuera del dibujo, exportadas en los ocho
-  renglones originales con letra negra y legible.
+VERSIÓN FINAL
+- Un solo editor gráfico: la carretera completa de cada hoja.
+- No hay selector de casos ni editor gráfico por estación.
+- Se conservan los dibujos guardados de la carretera completa. Si un
+  borrador solo tenía un dibujo por estación, se adapta al editor único.
+- Las estaciones admiten una sola coma o punto y de 1 a 3 decimales.
+  Ejemplos: 2,870; 2.864; 0,0. Un entero se escribe 2,0.
+- No se permite repetir una estación en el inventario, aunque cambie el
+  separador, los ceros o la hoja. Cada hoja se ordena de menor a mayor,
+  de abajo hacia arriba. Los duplicados anteriores se señalan para corregirlos.
+- Las líneas horizontales azules delimitan las estaciones y no se exportan.
+- En Mover y zoom se recorre la vista; las figuras quedan bloqueadas.
+  En Símbolo, un dedo mueve y dos dedos escalan la figura; la vista queda fija.
+- Los tiradores laterales ajustan el largo sin engrosar; arriba y abajo
+  ajustan el grosor sin alargar. La flecha circular gira el símbolo.
+- Agregar muestra las 18 figuras originales; ☰ reúne las demás herramientas.
+- El croquis es una hoja blanca aparte, con lápiz y borrador parcial.
+  ☰ permite elegir herramientas y Volver a la app. Las observaciones
+  generales se escriben fuera del dibujo.
 
-DOCUMENTOS
-Vista previa abre el documento completo, con frente y reverso. Excel y PDF
-utilizan la misma hoja y caso seleccionado. La plantilla oficial conserva
-sus medidas, líneas y dibujos. Los datos del encabezado siguen en Arial 14
-negrita; las estaciones y observaciones en Arial 12 negro en Excel.
-Si una observación supera ocho renglones, acortala o usá otra hoja.
-
-GUARDADO
-El borrador se guarda automáticamente en este navegador y dispositivo.
-Se recuperan los borradores de versiones anteriores. No hay descarga ni
-importación de respaldos ni sincronización entre equipos. Antes de crear
-un inventario nuevo, descargá las hojas que necesités conservar en Excel
-o PDF. Crear uno nuevo reemplaza el borrador después de confirmarlo.
-Cambiar dominio, navegador o puerto crea un guardado distinto.
+DOCUMENTOS Y GUARDADO
+Vista previa, Excel y PDF usan siempre el dibujo completo de la hoja.
+Cada documento incluye frente y reverso. La plantilla oficial conserva
+sus medidas, líneas, celdas y dibujos. El encabezado está en Arial 14
+negrita; estaciones y observaciones en Arial 12 negro en Excel.
+El borrador se guarda en este navegador y dispositivo. No hay sincronización
+ni botones de respaldo. Antes de crear un inventario nuevo, descargá las
+hojas que necesités conservar; reemplazar el borrador requiere confirmarlo.
 
 ACTUALIZAR TU WEB
-Reemplazá el contenido completo de dist/ en la carpeta publicable que ya
-usa tu hosting, conservando las rutas. No subás el ZIP como página web.
-Si GitHub Pages sirve docs/, copiá allí el contenido de dist/.
-El proyecto completo tiene 97 archivos y dist/ tiene 49. El resto del proyecto son
-herramientas, código de prueba y ejemplos para conservar en tu equipo.
-Después de actualizar, recargá con conexión o cerrá y abrí la app.
-La versión se muestra al final de la página: 0.8.4.
+Reemplazá dist/ dentro de la carpeta publicable que ya usa tu hosting,
+conservando las rutas. No subás el ZIP como página web.
+Si tu repositorio tiene MOPT_Inventario_Camino/dist, reemplazá esa carpeta.
+Recargá con conexión hasta ver 1.0.0 al pie de la app.
+El proyecto tiene 95 archivos y dist/ tiene 49. Ver SUBIR_A_GITHUB.md.
 
 EJEMPLOS
-En ejemplos/croquis-localizacion.xls y .pdf podés revisar el croquis y
-las observaciones del reverso. Los JSON son datos internos de prueba;
-no se importan desde la interfaz de esta versión.
-
-Ver README.md para detalles de uso, plantilla y pruebas.
+representacion-grafica.xls y .pdf muestran la carretera completa.
+croquis-localizacion.xls y .pdf muestran el dibujo y observaciones del reverso.
+Los JSON son muestras internas, sin importación desde la interfaz.
+Ver README.md para los detalles y pruebas.

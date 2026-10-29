@@ -1,6 +1,6 @@
 // Reglas del inventario independientes de la pantalla para poder verificarlas.
 import {restoreStations,sortStations} from './stations.js';
-import {restoreGraphics,createGraphics,reflowStationGraphics} from './graphics-model.js';
+import {restoreGraphics,createGraphics} from './graphics-model.js';
 import {restoreSketch,createSketch} from './sketch-model.js';
 import {restoreBackObservations} from './back-observations.js';
 import {createId as id} from './ids.js';
@@ -110,10 +110,9 @@ export function fromBackup(raw, catalog) {
   if (!Array.isArray(input.sheets) || input.sheets.length < 1 || input.sheets.length > 1000) throw new Error('El respaldo debe contener entre 1 y 1000 hojas.');
   const sheets = input.sheets.map(s => {
     const stations=restoreStations(s?.stations);
-    // Primero se comprueba el dibujo con sus renglones anteriores; después
-    // se ordena sin borrar datos ni rechazar figuras válidas del borrador.
+    // La lectura conserva el dibujo libre y adapta los borradores antiguos.
     const sheet={id:clean(s?.id,120),stations:sortStations(stations),graphics:restoreGraphics(s?.graphics,stations),sketch:restoreSketch(s?.sketch),backObservations:restoreBackObservations(s?.backObservations)};
-    reflowStationGraphics(sheet,stations);return sheet;
+    return sheet;
   });
   if (sheets.some(s => !s.id) || new Set(sheets.map(s => s.id)).size !== sheets.length) throw new Error('La numeración de hojas del respaldo está dañada.');
   let road = null;

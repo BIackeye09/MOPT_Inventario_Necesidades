@@ -316,7 +316,7 @@ async function boot() {
       if(inventory.sheets.length>=1000){toast('El inventario ya tiene 1000 hojas.');return;}
       inventory=addSheet(inventory);inventory.activeSheetId=inventory.sheets.at(-1).id;commit({sheets:true});
     }});
-    graphics=setupGraphics({getInventory:()=>inventory,commit,notify:toast,selectStations:()=>editorTabs.select('stations')});
+    graphics=setupGraphics({getInventory:()=>inventory,commit,notify:toast});
     sketch=setupSketch({getInventory:()=>inventory,commit,notify:toast,confirmAction});
     documents = setupDocuments({ getInventory: () => inventory, notify: toast });
     $('editor').setAttribute('aria-busy', 'false');

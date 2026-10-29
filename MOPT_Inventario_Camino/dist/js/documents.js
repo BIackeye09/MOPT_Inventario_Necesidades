@@ -22,7 +22,7 @@ export function documentValues(inventory) {
     surface: inventory.surface ? Number(inventory.surface) : null,
     provinceCode: text(road.provinceCode), provinceName: text(road.provinceName),
     cantonCode: text(road.cantonCode), cantonName: text(road.cantonName),
-    stations: stationRows(activeSheet),graphicMode:activeSheet?.graphics?.activeMode||'free',
+    stations: stationRows(activeSheet),
     graphics:graphicPlacements(activeSheet),sketch:restoreSketch(activeSheet?.sketch),
     backObservations:activeSheet?.backObservations||'',backObservationLines:backObservationLines(activeSheet?.backObservations)
   };
@@ -143,6 +143,5 @@ export function makeExcel(template, values, assets={}) {
 export function documentFilename(inventory, extension) {
   const values = documentValues(inventory);
   const code = (values.code || 'borrador').replace(/[^a-zA-Z0-9-]/g,'_');
-  const graphic=values.graphics.length?`_caso-${values.graphicMode==='free'?'1-libre':'2-estaciones'}`:'';
-  return `Inventario_DPA301_${code}${graphic}_hoja-${values.sheet}-de-${values.total}.${extension}`;
+  return `Inventario_DPA301_${code}_hoja-${values.sheet}-de-${values.total}.${extension}`;
 }

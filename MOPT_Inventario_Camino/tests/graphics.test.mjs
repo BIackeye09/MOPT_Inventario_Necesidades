@@ -1,10 +1,10 @@
-// Verifica datos, los dos casos, imágenes nativas y conservación de la plantilla.
+// Verifica datos, el dibujo único, imágenes nativas y conservación de la plantilla.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,readdir} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {createInventory,addSheet,toBackup,fromBackup} from '../dist/js/model.js';
-import {SYMBOLS,symbolUrl,createGraphic,graphicPlacements,loadGraphicAssets,removeStationGraphics,GRAPH_FRAME,GRAPH_ROAD_BOUNDS,constrainGraphic,stretchGraphic,graphicBounds,stationFrame,graphicAssetKey,exportGraphic,fitGraphicView,zoomGraphicView,constrainGraphicView} from '../dist/js/graphics-model.js';
+import {SYMBOLS,symbolUrl,createGraphic,graphicPlacements,loadGraphicAssets,GRAPH_FRAME,constrainGraphic,stretchGraphic,graphicBounds,stationFrame,graphicAssetKey,exportGraphic,fitGraphicView,zoomGraphicView,constrainGraphicView} from '../dist/js/graphics-model.js';
 import {rotateExamplePng} from '../scripts/rotar_simbolos.mjs';
 import {documentValues,makeExcel,makePdf,documentFilename} from '../dist/js/documents.js';
 import {readContainer,readRecords} from '../dist/js/excel-template.js';
@@ -15,6 +15,43 @@ const pdf=await readFile(new URL('../dist/templates/DPA-301-original.pdf',import
 const catalog=JSON.parse(await readFile(new URL('../dist/data/caminos.json',import.meta.url),'utf8'));
 const station=(id,km)=>({id,station:km,diameter:'',culvertLength:'',headwallNumber:'',headwallType:'',observations:''});
 const assetReader=async url=>Buffer.from(await (await fetch(url)).arrayBuffer());
+test('un borrador anterior siempre recupera el dibujo libre aunque tuviera seleccionado el editor retirado',()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=[station('old','2,870')];
+  const drawing=constrainGraphic(createGraphic('bacheo'),{rotation:37.5,width:.2,height:.03});
+  sheet.graphics={activeMode:'station',free:[drawing],station:[{id:'old-symbol',symbolId:'tomas',stationId:'old',x:.2,y:.2,width:.1,height:.3,rotation:0}]};
+  const recovered=fromBackup(toBackup(inv),catalog),graphics=recovered.sheets[0].graphics;
+  assert.deepEqual(graphics,{free:[drawing]});
+  assert.equal(documentValues(recovered).graphics[0].id,drawing.id);
+  assert.doesNotMatch(documentFilename(recovered,'xls'),/caso|estaciones/);
+});
+test('un borrador que solo tenía dibujo por estación se adapta una vez a la carretera completa',()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=[station('a','2,864'),station('b','2,870')];
+  const row=stationFrame(sheet.stations,'b'),old=constrainGraphic({id:'old-symbol',symbolId:'direccion-agua',stationId:'b',x:.2,y:.2,width:.1,height:.3,rotation:37.5},{},row.height);
+  sheet.graphics={activeMode:'station',free:[],station:[old]};
+  const recovered=fromBackup(toBackup(inv),catalog),graphics=recovered.sheets[0].graphics,item=graphics.free[0];
+  assert.deepEqual(Object.keys(graphics),['free']);assert.ok(!Object.hasOwn(item,'stationId'));
+  assert.equal(item.id,old.id);assert.equal(item.rotation,old.rotation);assert.equal(item.width,old.width);
+  assert.ok(Math.abs(item.y*GRAPH_FRAME.height-row.top-old.y*row.height)<1e-7);
+  assert.ok(Math.abs(item.height*GRAPH_FRAME.height-old.height*row.height)<1e-7);
+  assert.deepEqual(fromBackup(toBackup(recovered),catalog).sheets[0].graphics,graphics);
+});
+test('la recuperación de dibujos antiguos conserva 26 filas y sus giros en un único plano',()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=Array.from({length:26},(_,i)=>station(`s${i}`,`${i},0`));
+  const legacy=sheet.stations.flatMap(st=>[0,37,90,270].map(rotation=>{
+    const row=stationFrame(sheet.stations,st.id);
+    return constrainGraphic({id:`${st.id}-${rotation}`,symbolId:'alcantarilla-existente',stationId:st.id,x:.4,y:.3,width:.2,height:.2,rotation},{},row.height);
+  }));
+  sheet.graphics={activeMode:'station',free:[],station:legacy};
+  const recovered=fromBackup(toBackup(inv),catalog),items=recovered.sheets[0].graphics.free;
+  assert.equal(items.length,104);
+  for(let i=0;i<items.length;i++) {
+    const old=legacy[i],row=stationFrame(sheet.stations,old.stationId),item=items[i];
+    assert.equal(item.id,old.id);assert.equal(item.rotation,old.rotation);assert.equal(item.width,old.width);
+    assert.ok(Math.abs(item.height*GRAPH_FRAME.height-old.height*row.height)<1e-7);
+    const bounds=graphicBounds(item);assert.ok(bounds.x>=-1e-7&&bounds.y>=-1e-7&&bounds.x+bounds.width<=1+1e-7&&bounds.y+bounds.height<=1+1e-7);
+  }
+  assert.equal(graphicPlacements(recovered.sheets[0]).length,104);
+});
 test('estirar hasta el límite conserva el otro eje y el contorno girado dentro del documento',()=>{
   for(const frameHeight of [GRAPH_FRAME.height,15.386])for(const rotation of [0,37,90,143,270])for(const axis of ['width','height']) {
     const item=constrainGraphic(createGraphic('bacheo',{frameHeight}),{width:.04,height:.04,rotation},frameHeight);
@@ -66,33 +103,9 @@ test('las 18 figuras agrupadas conservan cada byte de los PNG originales y la hu
   assert.equal(Buffer.from(imageDigest(new TextEncoder().encode(''))).toString('hex'),'31d6cfe0d16ae931b73c59d7e0c089c0');
   assert.equal(Buffer.from(imageDigest(new TextEncoder().encode('a'))).toString('hex'),'bde52cb31de33e46245e05fbdbd6fb24');
 });
-test('los casos conservan dibujos independientes y los respaldos recuperan cada hoja',()=>{
-  let inv=addSheet(createInventory()),sheet=inv.sheets[0];sheet.stations=[station('s0','0,0'),station('s1','4,9')];
-  sheet.graphics.free=[createGraphic('bacheo',{x:.4,y:.8})];sheet.graphics.station=[createGraphic('tomas',{stationId:'s1',frameHeight:15.386})];
-  const free=graphicPlacements(sheet);sheet.graphics.activeMode='station';const linked=graphicPlacements(sheet);
-  assert.notEqual(free[0].symbolId,linked[0].symbolId);assert.ok(linked[0].y>GRAPH_FRAME.height-2*15.387);
-  const recovered=fromBackup(toBackup(inv),catalog);assert.deepEqual(recovered.sheets[0].graphics,sheet.graphics);
-  assert.equal(recovered.sheets[1].graphics.free.length,0);
-  const legacy=JSON.parse(toBackup(inv));delete legacy.inventory.sheets[0].graphics;
-  assert.deepEqual(fromBackup(legacy,catalog).sheets[0].graphics,{activeMode:'free',free:[],station:[]});
-});
-test('el gráfico por estación sube o baja con su fila y al eliminarla se retiran sus símbolos',()=>{
-  const sheet=createInventory().sheets[0];sheet.stations=[station('s0','0'),station('s1','4,9')];
-  sheet.graphics.activeMode='station';sheet.graphics.station=[createGraphic('bacheo',{stationId:'s1',frameHeight:15.386})];
-  const before=graphicPlacements(sheet)[0];sheet.stations.shift();removeStationGraphics(sheet,'s0');
-  const after=graphicPlacements(sheet)[0];assert.ok(after.y>before.y+15);
-  sheet.stations=[];removeStationGraphics(sheet,'s1');assert.deepEqual(graphicPlacements(sheet),[]);
-  // La plantilla cambia de alto entre filas; un giro debe seguir cabiendo al subir.
-  sheet.stations=Array.from({length:9},(_,i)=>station(`r${i}`,String(i)));
-  const height=stationFrame(sheet.stations,'r8').height;
-  sheet.graphics.station=[constrainGraphic(createGraphic('alcantarilla-existente',{stationId:'r8',frameHeight:height}),{width:.8,height:.8,rotation:90},height)];
-  sheet.stations.shift();removeStationGraphics(sheet,'r0');
-  const box=graphicBounds(sheet.graphics.station[0],stationFrame(sheet.stations,'r8').height);
-  assert.ok(box.y>=-1e-7&&box.y+box.height<=1.0000001);assert.equal(graphicPlacements(sheet)[0].rotation,90);
-});
 test('los respaldos rechazan figuras desconocidas, coordenadas fuera de la hoja y estaciones inexistentes',()=>{
   const inv=createInventory();inv.sheets[0].graphics.free=[createGraphic('bacheo')];
-  for(const change of [s=>s.graphics.free[0].symbolId='inventado',s=>s.graphics.free[0].width=-1,s=>s.graphics.free[0].x=2,s=>{s.graphics.activeMode='station';s.graphics.station=[{...s.graphics.free[0],stationId:'no-existe'}];}]){
+  for(const change of [s=>s.graphics.free[0].symbolId='inventado',s=>s.graphics.free[0].width=-1,s=>s.graphics.free[0].x=2,s=>{s.graphics.free=[];s.graphics.station=[{...s.graphics.free[0],stationId:'no-existe'}];}]){
     const raw=JSON.parse(toBackup(inv));change(raw.inventory.sheets[0]);assert.throws(()=>fromBackup(raw,catalog));
   }
 });
@@ -125,20 +138,21 @@ test('una hoja con 200 imágenes amplía FAT y mantiene identificadores y tamañ
   assert.equal(front.find(n=>n.type===0xf008).end-front.find(n=>n.type===0xf008).data,8);
   assert.equal(d.sheets[0].readUInt32LE(front.find(n=>n.type===0xf008).data),216);
 });
-test('PDF, Excel y el nombre de descarga distinguen el caso seleccionado',async()=>{
-  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=[station('s0','0')];sheet.graphics.activeMode='station';sheet.graphics.station=[createGraphic('alcantarilla-existente',{stationId:'s0',frameHeight:15.386})];
+test('PDF, Excel y nombre de descarga usan el único dibujo de la hoja',async()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=[station('s0','0,0')];sheet.graphics.free=[createGraphic('alcantarilla-existente')];
   const values=documentValues(inv),assets=await loadGraphicAssets(values.graphics,assetReader);
-  assert.match(documentFilename(inv,'xls'),/caso-2-estaciones/);
+  assert.equal(Object.hasOwn(values,'graphicMode'),false);assert.doesNotMatch(documentFilename(inv,'xls'),/caso|estaciones/);
+  assert.match(documentFilename(inv,'xls'),/hoja-1-de-1\.xls$/);
   assert.equal((await PDFDocument.load(await makePdf(pdf,values,assets))).getPageCount(),2);
   assert.throws(()=>makeExcel(template,values),/imagen original/);
   await assert.rejects(()=>makePdf(pdf,values),/Falta cargar/);
-  sheet.graphics.activeMode='free';assert.equal(documentValues(inv).graphics.length,0);
 });
 test('todos los controles gráficos y sus recursos están incluidos para trabajar sin conexión',async()=>{
   const html=await readFile(new URL('../dist/index.html',import.meta.url),'utf8'),ui=await readFile(new URL('../dist/js/graphics-ui.js',import.meta.url),'utf8'),sw=await readFile(new URL('../dist/sw.js',import.meta.url),'utf8');
   for(const [,id]of ui.matchAll(/\$\('([^']+)'\)/g))assert.ok(html.includes(`id="${id}"`),id);
   for(const name of ['graphics-ui.js','graphics-model.js','symbol-catalog.js','excel-drawing.js'])assert.ok(sw.includes(`./js/${name}`),name);
   for(const symbol of SYMBOLS){assert.ok(symbol.pngBase64,symbol.id);assert.ok(!sw.includes(`./symbols/${symbol.id}.png`),symbol.id);}
+  assert.doesNotMatch(html,/id="(?:graphic-case-station|graphic-case-free|graphic-station-panel|graphic-focus-station)"/);
 });
 test('el giro conserva el centro, normaliza vueltas y limita el contorno real de cada caso',()=>{
   const original=createGraphic('alcantarilla-existente',{x:.5,y:.5});
@@ -150,13 +164,11 @@ test('el giro conserva el centro, normaliza vueltas y limita el contorno real de
     assert.ok(box.x>=-1e-7&&box.y>=-1e-7&&box.x+box.width<=1.0000001&&box.y+box.height<=1.0000001,`${height}, ${rotation}`);
   }
 });
-test('los respaldos anteriores reciben 0 grados y ambos casos conservan su rotación',()=>{
+test('los respaldos anteriores reciben 0 grados y el dibujo conserva su rotación',()=>{
   const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=[station('s0','0')];
   sheet.graphics.free=[constrainGraphic(createGraphic('bacheo'),{rotation:37.5})];
-  const height=stationFrame(sheet.stations,'s0').height;
-  sheet.graphics.station=[constrainGraphic(createGraphic('tomas',{stationId:'s0',frameHeight:height}),{rotation:270},height)];
   const recovered=fromBackup(toBackup(inv),catalog).sheets[0];
-  assert.equal(recovered.graphics.free[0].rotation,37.5);assert.equal(recovered.graphics.station[0].rotation,270);
+  assert.equal(recovered.graphics.free[0].rotation,37.5);
   const legacy=JSON.parse(toBackup(inv));delete legacy.inventory.sheets[0].graphics.free[0].rotation;
   assert.equal(fromBackup(legacy,catalog).sheets[0].graphics.free[0].rotation,0);
   for(const rotation of ['90',null,-1,360]){const raw=JSON.parse(toBackup(inv));raw.inventory.sheets[0].graphics.free[0].rotation=rotation;assert.throws(()=>fromBackup(raw,catalog),/ángulo/);}
@@ -207,36 +219,17 @@ test('el proyecto completo queda por debajo de 100 archivos para una sola carga 
   assert.ok(all.some(file=>file.pathname.endsWith('/dist/templates/DPA-301-original.pdf')));
 });
 
-test('las alcantarillas nuevas del Caso 2 abarcan la calzada en las 26 filas y los demás símbolos mantienen su tamaño',()=>{
-  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=Array.from({length:26},(_,i)=>station(`s${i}`,String(i)));
-  for(const s of sheet.stations)for(const symbolId of ['alcantarilla-existente','alcantarilla-nueva']) {
-    const height=stationFrame(sheet.stations,s.id).height,item=createGraphic(symbolId,{stationId:s.id,frameHeight:height});
-    assert.ok(Math.abs(item.x*GRAPH_FRAME.width-GRAPH_ROAD_BOUNDS.left)<1e-6);
-    assert.ok(Math.abs((item.x+item.width)*GRAPH_FRAME.width-GRAPH_ROAD_BOUNDS.right)<1e-6);
-    assert.ok(item.y>=0&&item.y+item.height<=1);
-    sheet.graphics.station.push(item);
-  }
-  const before=structuredClone(sheet.graphics.station);
-  assert.deepEqual(fromBackup(toBackup(inv),catalog).sheets[0].graphics.station,before);
-  assert.ok(Math.abs(createGraphic('alcantarilla-existente').width*GRAPH_FRAME.width-22)<1e-6);
-  assert.ok(Math.abs(createGraphic('alcantarilla-nueva').width*GRAPH_FRAME.width-22)<1e-6);
-  assert.ok(createGraphic('poste-electrico',{stationId:'s0',frameHeight:15.386}).width*GRAPH_FRAME.width<22);
-  // Un dibujo guardado con tamaño manual no vuelve a ajustarse al abrirlo.
-  sheet.graphics.station[0]=constrainGraphic(sheet.graphics.station[0],{width:.12,height:.2,x:.1,y:.4},stationFrame(sheet.stations,'s0').height);
-  assert.deepEqual(fromBackup(toBackup(inv),catalog).sheets[0].graphics.station,sheet.graphics.station);
-});
-
-test('el contorno girado llega a ambos bordes en los dos casos y se recupera aunque el rectángulo original quede fuera',()=>{
+test('el contorno girado llega a ambos bordes en el dibujo único y se recupera aunque el rectángulo original quede fuera',()=>{
   const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=[station('s0','0')];
-  for(const mode of ['free','station']) {
-    const height=mode==='free'?GRAPH_FRAME.height:stationFrame(sheet.stations,'s0').height;
-    const base=createGraphic('alcantarilla-nueva',{...(mode==='station'?{stationId:'s0'}:{}),frameHeight:height});
+   {
+    const height=GRAPH_FRAME.height;
+    const base=createGraphic('alcantarilla-nueva');
     const left=constrainGraphic(base,{rotation:90,x:-999},height),right=constrainGraphic({...base,id:base.id+'-right'},{rotation:90,x:999},height);
     assert.ok(left.x<0,'El ancla invisible ya no bloquea el borde izquierdo.');
     assert.ok(right.x+right.width>1,'El ancla invisible ya no bloquea el borde derecho.');
     assert.ok(Math.abs(graphicBounds(left,height).x)<1e-7);
     const box=graphicBounds(right,height);assert.ok(Math.abs(box.x+box.width-1)<1e-7);
-    sheet.graphics[mode]=[left,right];
+    sheet.graphics.free=[left,right];
   }
   assert.deepEqual(fromBackup(toBackup(inv),catalog).sheets[0].graphics,sheet.graphics);
   const bad=JSON.parse(toBackup(inv));bad.inventory.sheets[0].graphics.free[0].x-=.01;
@@ -253,4 +246,11 @@ test('los símbolos girados en los extremos se exportan completos con las anclas
   for(const item of values.graphics){const box=exportGraphic(item);assert.ok(box.x>=-1e-6&&box.x+box.width<=GRAPH_FRAME.width+1e-6);}
   assert.equal((await PDFDocument.load(await makePdf(pdf,values,assets))).getPageCount(),2);
   assert.deepEqual(d.sheets[1],drawingStreams(template).sheets[1]);
+});
+
+test('cada hoja conserva su dibujo y un borrador sin gráficos recibe un lienzo vacío',()=>{
+  const inv=addSheet(createInventory());inv.sheets[0].graphics.free=[createGraphic('bacheo')];inv.sheets[1].graphics.free=[createGraphic('tomas')];
+  assert.deepEqual(fromBackup(toBackup(inv),catalog).sheets.map(s=>s.graphics),inv.sheets.map(s=>s.graphics));
+  const raw=JSON.parse(toBackup(inv));delete raw.inventory.sheets[1].graphics;
+  assert.deepEqual(fromBackup(raw,catalog).sheets[1].graphics,{free:[]});
 });

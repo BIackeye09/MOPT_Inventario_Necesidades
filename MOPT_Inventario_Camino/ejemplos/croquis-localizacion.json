@@ -64,7 +64,6 @@
           }
         ],
         "graphics": {
-          "activeMode": "free",
           "free": [
             {
               "id": "e51b64c1-9aec-4bfb-b242-372ed0e35e1c",
@@ -110,58 +109,6 @@
               "width": 0.069951,
               "height": 0.024428130145467995,
               "rotation": 270
-            }
-          ],
-          "station": [
-            {
-              "id": "1493afe8-da6f-49be-a979-bbceadc350cb",
-              "symbolId": "poste-electrico",
-              "x": 0.74045584,
-              "y": 0.15,
-              "width": 0.07908832,
-              "height": 0.7,
-              "rotation": 90,
-              "stationId": "inicio"
-            },
-            {
-              "id": "9ee56b18-8128-4c4e-aa25-2a1970c200ec",
-              "symbolId": "alcantarilla-existente",
-              "x": 0.38987903,
-              "y": 0.29486792,
-              "width": 0.22024195,
-              "height": 0.41026415,
-              "rotation": 30,
-              "stationId": "medio"
-            },
-            {
-              "id": "c3a42dc4-0463-48be-978e-c4d67f477baf",
-              "symbolId": "chapea-mano",
-              "x": 0.07788226,
-              "y": 0.41163717,
-              "width": 0.24423549,
-              "height": 0.17672567,
-              "rotation": 345,
-              "stationId": "medio"
-            },
-            {
-              "id": "24d161fe-2997-476d-be1b-ac5114512b5e",
-              "symbolId": "bacheo",
-              "x": 0.3146246,
-              "y": 0.29268915,
-              "width": 0.1707508,
-              "height": 0.4146217,
-              "rotation": 45,
-              "stationId": "final"
-            },
-            {
-              "id": "5f787c3a-1dea-4d78-9b85-d5b6d40fefd0",
-              "symbolId": "gaviones",
-              "x": 0.7650245,
-              "y": 0.15,
-              "width": 0.069951,
-              "height": 0.7,
-              "rotation": 270,
-              "stationId": "final"
             }
           ]
         },

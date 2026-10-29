@@ -1,7 +1,7 @@
 // Vista previa y descargas locales. Se usa el mismo PDF para ver y descargar.
 import {documentValues, makePdf, makeExcel, documentFilename} from './documents.js';
 import {sheetLabel, validateHeader} from './model.js';
-import {loadGraphicAssets,MODES} from './graphics-model.js';
+import {loadGraphicAssets} from './graphics-model.js';
 import {loadSketchAsset} from './sketch-model.js';
 
 const $ = id => document.getElementById(id);
@@ -81,8 +81,6 @@ export function setupDocuments({getInventory, notify}) {
     const token=++generation;
     const inventory=getInventory();
     $('export-sheet-label').textContent=sheetLabel(inventory);
-    const activeSheet=inventory.sheets.find(s=>s.id===inventory.activeSheetId);
-    $('export-graphic-label').textContent=MODES[activeSheet?.graphics?.activeMode||'free'];
     try {
       // Solo se dibujan las dos caras cuando se abre la vista previa completa.
       if($('preview-dialog').open) {

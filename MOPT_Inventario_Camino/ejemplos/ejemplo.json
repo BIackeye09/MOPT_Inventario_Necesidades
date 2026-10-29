@@ -6,7 +6,6 @@
     "id": "c448ac4f-6a6a-4b09-b978-4ffd63926c2a",
     "number": "EJEMPLO-001",
     "macroRegion": "V",
-    "surface": "2",
     "road": {
       "id": "N:RVN_0524:40080:710",
       "type": "N",
@@ -31,6 +30,7 @@
       "codeSource": "red nacional heredia(1).rtf",
       "mode": "catalog"
     },
+    "surface": "2",
     "sheets": [
       {
         "id": "9cae52c9-1274-4465-9ba2-2c0db519291b",
@@ -64,10 +64,12 @@
           }
         ],
         "graphics": {
-          "activeMode": "free",
-          "free": [],
-          "station": []
-        }
+          "free": []
+        },
+        "sketch": {
+          "strokes": []
+        },
+        "backObservations": ""
       }
     ],
     "activeSheetId": "9cae52c9-1274-4465-9ba2-2c0db519291b",

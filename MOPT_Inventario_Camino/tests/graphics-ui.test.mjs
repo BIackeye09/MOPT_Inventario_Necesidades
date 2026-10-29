@@ -3,9 +3,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {setupGraphics} from '../dist/js/graphics-ui.js';
 import {createInventory} from '../dist/js/model.js';
-import {GRAPH_FRAME,graphicPlacements,stationFrame} from '../dist/js/graphics-model.js';
+import {GRAPH_FRAME,graphicPlacements} from '../dist/js/graphics-model.js';
 function screen({phone=false}={}) {
-  const inventory=createInventory(),nodes=new Map();let svgRows=[],ui,commits=0;
+  const inventory=createInventory(),nodes=new Map();let ui,commits=0;
   inventory.sheets[0].stations=['0,0','1,25','4,9'].map((station,i)=>({id:`s${i}`,station,observations:''}));
   function node(id) {
     if(!nodes.has(id)) {
@@ -13,13 +13,13 @@ function screen({phone=false}={}) {
         addEventListener(name,fn){this.events[name]=fn;},setAttribute(name,v){this[name]=String(v);},getAttribute(name){return this[name]??null;},focus(){},showModal(){this.open=true;},close(){this.open=false;this.events.close?.();},
         getBoundingClientRect(){return {height:1000,width:440};},getScreenCTM(){return {inverse(){return {};}};},
         setPointerCapture(id){this.captures.add(id);},hasPointerCapture(id){return this.captures.has(id);},releasePointerCapture(id){this.captures.delete(id);},style:{}};
-      Object.defineProperty(value,'innerHTML',{get:()=>html,set:text=>{html=text;if(id==='station-graphic-list')svgRows=[...text.matchAll(/data-station-id="([^"]+)"/g)].map(m=>{const svg=node(`svg-${m[1]}`);svg.dataset.stationId=m[1];return svg;});}});
+      Object.defineProperty(value,'innerHTML',{get:()=>html,set:text=>{html=text;}});
       nodes.set(id,value);
     }
     return nodes.get(id);
   }
   const fullscreenCalls={enter:0,exit:0};
-  globalThis.document={getElementById:node,querySelectorAll:()=>svgRows,body:{classList:{add(){},remove(){}}},
+  globalThis.document={getElementById:node,querySelectorAll:()=>[],body:{classList:{add(){},remove(){}}},
     documentElement:{requestFullscreen(){fullscreenCalls.enter++;return Promise.resolve();}},exitFullscreen(){fullscreenCalls.exit++;return Promise.resolve();}};
   globalThis.requestAnimationFrame=fn=>fn();
   globalThis.matchMedia=()=>({matches:phone});
@@ -30,34 +30,29 @@ function screen({phone=false}={}) {
   const lastPoints=new Map();
   function pointer(type,{id,x,y,handle,stationId,pointerId=1,pointerType='mouse',focus=false}={}) {
     const last=lastPoints.get(pointerId)||{x:0,y:0};x??=last.x;y??=last.y;lastPoints.set(pointerId,{x,y});
-    const svg=node(focus?'graphic-focus-canvas':stationId?`svg-${stationId}`:'graphic-free-canvas');
+    const svg=node(focus?'graphic-focus-canvas':'graphic-free-canvas');
     const event={button:0,pointerId,pointerType,clientX:x,clientY:y,preventDefault(){},target:{dataset:{handle},closest(selector){return selector.startsWith('svg')?svg:id?{dataset:{graphicId:id}}:null;}}};
     node(focus?'graphic-focus-dialog':'panel-graphics').events[type](event);
   }
   return {node,inventory,ui,click,add,pointer,fullscreenCalls,get commits(){return commits;}};
 }
 
-// Los mismos gestos se comprueban en la ruta completa y en un renglón.
-function focusCase(mode) {
-  const s=screen(),sheet=s.inventory.sheets[0],stationId=mode==='station'?'s1':undefined;
-  if(stationId){s.click('graphic-case-station');s.node('symbol-s1').value='bacheo';s.node('station-graphic-list').events.click({target:{closest:()=>({dataset:{addStationSymbol:stationId}})}});}
-  else s.add('bacheo');
-  if(stationId)s.node('station-graphic-list').events.click({target:{closest:()=>({dataset:{openStationEditor:stationId}})}});
-  else s.click('graphic-open-full');
-  const height=stationId?stationFrame(sheet.stations,stationId).height:GRAPH_FRAME.height,item=sheet.graphics[mode][0];
-  return {...s,get commits(){return s.commits;},sheet,item,height,
+// Ejercita el único editor con las mismas acciones del teléfono y del ratón.
+function focusEditor() {
+  const s=screen(),sheet=s.inventory.sheets[0];s.add('bacheo');s.click('graphic-open-full');
+  const item=sheet.graphics.free[0];
+  return {...s,get commits(){return s.commits;},sheet,item,height:GRAPH_FRAME.height,
     key(key){s.node('graphic-focus-dialog').events.keydown({key,shiftKey:false,preventDefault(){},target:{closest:()=>s.node('graphic-focus-canvas')}});},
     touch(type,pointerId,x,y,id){s.pointer(type,{focus:true,pointerType:'touch',pointerId,x,y,id});}};
 }
-
-test('Símbolo bloquea la cámara aunque ambos dedos comiencen en el fondo, en los dos casos',()=>{
-  for(const mode of ['free','station']) {
-    const s=focusCase(mode);s.click('graphic-focus-symbol');
+test('Símbolo bloquea la cámara aunque ambos dedos comiencen en el fondo, en la carretera completa',()=>{
+   {
+    const s=focusEditor();s.click('graphic-focus-symbol');
     const view=s.node('graphic-focus-canvas').getAttribute('viewBox'),before=structuredClone(s.sheet.graphics),commits=s.commits;
     s.touch('pointerdown',1,-1000,-1000);s.touch('pointerdown',2,-900,-1000);
     s.touch('pointermove',1,-1100,-950);s.touch('pointermove',2,-800,-900);
     s.touch('pointerup',2,-800,-900);s.touch('pointerup',1,-1100,-950);
-    assert.equal(s.node('graphic-focus-canvas').getAttribute('viewBox'),view,mode);
+    assert.equal(s.node('graphic-focus-canvas').getAttribute('viewBox'),view,'carretera');
     assert.deepEqual(s.sheet.graphics,before);assert.equal(s.commits,commits);
     for(const id of ['graphic-focus-fit','graphic-focus-working','graphic-focus-zoom-in','graphic-focus-zoom-out']) {
       assert.equal(s.node(id).disabled,true,id);s.click(id);
@@ -68,9 +63,9 @@ test('Símbolo bloquea la cámara aunque ambos dedos comiencen en el fondo, en l
   }
 });
 
-test('Mover y zoom bloquea todas las herramientas de símbolos sin cambiar de modo, en los dos casos',()=>{
-  for(const mode of ['free','station']) {
-    const s=focusCase(mode),before=structuredClone(s.sheet.graphics),commits=s.commits;
+test('Mover y zoom bloquea todas las herramientas de símbolos sin cambiar de modo, en la carretera completa',()=>{
+   {
+    const s=focusEditor(),before=structuredClone(s.sheet.graphics),commits=s.commits;
     for(const id of ['graphic-focus-smaller','graphic-focus-larger','graphic-focus-left','graphic-focus-right','graphic-focus-duplicate','graphic-focus-delete','graphic-focus-undo','graphic-focus-add']) {
       assert.equal(s.node(id).disabled,true,id);s.click(id);
       assert.deepEqual(s.sheet.graphics,before,id);assert.equal(s.node('graphic-focus-view')['aria-pressed'],'true',id);
@@ -81,9 +76,9 @@ test('Mover y zoom bloquea todas las herramientas de símbolos sin cambiar de mo
   }
 });
 
-test('Mover y zoom sobre una figura o su giro solo cambia la vista y no la selección, en ambos casos',()=>{
-  for(const mode of ['free','station']) {
-    const s=focusCase(mode),before=structuredClone(s.sheet.graphics),commits=s.commits;
+test('Mover y zoom sobre una figura o su giro solo cambia la vista y no la selección, en el editor',()=>{
+   {
+    const s=focusEditor(),before=structuredClone(s.sheet.graphics),commits=s.commits;
     const x=(s.item.x+s.item.width/2)*GRAPH_FRAME.width,y=(s.item.y+s.item.height/2)*s.height;
     const touch=(type,pointerId,a,b)=>s.pointer(type,{focus:true,id:s.item.id,handle:'rotate',pointerType:'touch',pointerId,x:a,y:b});
     const view=s.node('graphic-focus-canvas').getAttribute('viewBox');
@@ -97,8 +92,8 @@ test('Mover y zoom sobre una figura o su giro solo cambia la vista y no la selec
 });
 
 test('cambiar de modo durante un gesto cancela el cambio pendiente y libera los dedos',()=>{
-  for(const mode of ['free','station']) {
-    const s=focusCase(mode);s.click('graphic-focus-symbol');const before=structuredClone(s.sheet.graphics),commits=s.commits;
+   {
+    const s=focusEditor();s.click('graphic-focus-symbol');const before=structuredClone(s.sheet.graphics),commits=s.commits;
     const x=(s.item.x+s.item.width/2)*GRAPH_FRAME.width,y=(s.item.y+s.item.height/2)*s.height;
     s.touch('pointerdown',1,x,y,s.item.id);s.touch('pointermove',1,x+2,y+1,s.item.id);
     assert.notDeepEqual(s.sheet.graphics,before);s.click('graphic-focus-view');
@@ -116,9 +111,9 @@ test('abrir gráficos conserva toda la superficie de la app sin activar el aviso
   assert.equal(s.fullscreenCalls.enter,0);s.click('graphic-focus-close');assert.equal(s.fullscreenCalls.exit,0);
 });
 
-test('Símbolo permite mover, escalar, girar y usar el teclado manteniendo fija la cámara en ambos casos',()=>{
-  for(const mode of ['free','station']) {
-    const s=focusCase(mode);s.click('graphic-focus-symbol');const view=s.node('graphic-focus-canvas').getAttribute('viewBox');
+test('Símbolo permite mover, escalar, girar y usar el teclado manteniendo fija la cámara en el editor',()=>{
+   {
+    const s=focusEditor();s.click('graphic-focus-symbol');const view=s.node('graphic-focus-canvas').getAttribute('viewBox');
     const center=()=>({x:(s.item.x+s.item.width/2)*GRAPH_FRAME.width,y:(s.item.y+s.item.height/2)*s.height});
     let p=center(),before={...s.item};s.touch('pointerdown',1,p.x,p.y,s.item.id);s.touch('pointermove',1,p.x+2,p.y);s.touch('pointerup',1,p.x+2,p.y);
     assert.ok(s.item.x>before.x);p=center();before={...s.item};
@@ -126,13 +121,13 @@ test('Símbolo permite mover, escalar, girar y usar el teclado manteniendo fija 
     s.touch('pointermove',2,p.x+2,p.y);s.touch('pointerup',2,p.x+2,p.y);s.touch('pointerup',1,p.x-1,p.y);
     assert.ok(s.item.width>before.width);s.click('graphic-focus-right');assert.equal(s.item.rotation,15);
     before={...s.item};s.key('ArrowLeft');assert.ok(s.item.x<before.x);
-    assert.equal(s.node('graphic-focus-canvas').getAttribute('viewBox'),view,mode);
+    assert.equal(s.node('graphic-focus-canvas').getAttribute('viewBox'),view,'carretera');
   }
 });
 
-test('el dedo estira solo el largo o el grosor, incluso girado, en ambos casos y con Deshacer',()=>{
-  for(const mode of ['free','station'])for(const rotation of [0,37,90])for(const handle of ['e','w','n','s']) {
-    const s=focusCase(mode);s.click('graphic-focus-symbol');
+test('el dedo estira solo el largo o el grosor, incluso girado, en el editor y con Deshacer',()=>{
+  for(const rotation of [0,37,90])for(const handle of ['e','w','n','s']) {
+    const s=focusEditor();s.click('graphic-focus-symbol');
     for(let i=0;i<4;i++)s.click('graphic-focus-smaller');
     s.node('graphic-angle').events.change({target:{value:String(rotation)}});
     const before={...s.item},view=s.node('graphic-focus-canvas').getAttribute('viewBox'),commits=s.commits;
@@ -144,32 +139,32 @@ test('el dedo estira solo el largo o el grosor, incluso girado, en ambos casos y
     s.pointer('pointerdown',{focus:true,id:s.item.id,handle,pointerType:'touch',x,y});
     s.pointer('pointermove',{focus:true,pointerType:'touch',x:x+localX*c-localY*sin,y:y+localX*sin+localY*c});
     s.pointer('pointerup',{focus:true,pointerType:'touch'});
-    assert.ok(s.item[horizontal?'width':'height']>before[horizontal?'width':'height'],`${mode} ${rotation} ${handle}`);
+    assert.ok(s.item[horizontal?'width':'height']>before[horizontal?'width':'height'],`carretera ${rotation} ${handle}`);
     assert.equal(s.item[horizontal?'height':'width'],before[horizontal?'height':'width']);
     assert.equal(s.item.rotation,before.rotation);assert.equal(s.node('graphic-focus-canvas').getAttribute('viewBox'),view);
     assert.equal(s.commits,commits+1);assert.doesNotThrow(()=>graphicPlacements(s.sheet));
-    s.click('graphic-focus-undo');assert.deepEqual(s.sheet.graphics[mode][0],before);
+    s.click('graphic-focus-undo');assert.deepEqual(s.sheet.graphics.free[0],before);
   }
 });
 
 test('los botones de largo y grosor actúan por separado y quedan bloqueados en Mover y zoom',()=>{
-  for(const mode of ['free','station']) {
-    const s=focusCase(mode),actions=[['graphic-focus-longer','width',1],['graphic-focus-shorter','width',-1],['graphic-focus-thicker','height',1],['graphic-focus-thinner','height',-1]];
+   {
+    const s=focusEditor(),actions=[['graphic-focus-longer','width',1],['graphic-focus-shorter','width',-1],['graphic-focus-thicker','height',1],['graphic-focus-thinner','height',-1]];
     for(const [id,axis,sign]of actions) {
       const locked=structuredClone(s.sheet.graphics);assert.equal(s.node(id).disabled,true);s.click(id);assert.deepEqual(s.sheet.graphics,locked);
-      s.click('graphic-focus-symbol');const current=s.sheet.graphics[mode][0];
+      s.click('graphic-focus-symbol');const current=s.sheet.graphics.free[0];
       const x=(current.x+current.width/2)*GRAPH_FRAME.width,y=(current.y+current.height/2)*s.height;
       s.pointer('pointerdown',{focus:true,id:current.id,x,y});s.pointer('pointerup',{focus:true,x,y});
       const before={...current};
-      assert.equal(s.node(id).disabled,false);s.click(id);const after=s.sheet.graphics[mode][0];
+      assert.equal(s.node(id).disabled,false);s.click(id);const after=s.sheet.graphics.free[0];
       assert.ok((after[axis]-before[axis])*sign>0);assert.equal(after[axis==='width'?'height':'width'],before[axis==='width'?'height':'width']);
-      s.click('graphic-focus-undo');assert.deepEqual(s.sheet.graphics[mode][0],before);s.click('graphic-focus-view');
+      s.click('graphic-focus-undo');assert.deepEqual(s.sheet.graphics.free[0],before);s.click('graphic-focus-view');
     }
   }
 });
 
 test('cancelar un estiramiento restaura largo y grosor y libera el dedo',()=>{
-  const s=focusCase('free');s.click('graphic-focus-symbol');const before={...s.item};
+  const s=focusEditor();s.click('graphic-focus-symbol');const before={...s.item};
   s.pointer('pointerdown',{focus:true,id:s.item.id,handle:'e',pointerType:'touch',x:40,y:200});
   s.pointer('pointermove',{focus:true,pointerType:'touch',x:48,y:201});s.pointer('pointercancel',{focus:true,pointerType:'touch'});
   assert.deepEqual(s.item,before);assert.equal(s.node('graphic-focus-canvas').captures.size,0);
@@ -205,20 +200,6 @@ test('Símbolo cambia el tamaño con dos dedos sin cambiar el zoom y permite des
   touch('pointerup',2,cx+3,cy);touch('pointerup',1,cx-3,cy);
   assert.ok(Math.abs(item.width-before.width*1.5)<1e-8);assert.equal(s.node('graphic-focus-canvas').getAttribute('viewBox'),view);
   s.click('graphic-focus-undo');assert.deepEqual(sheet.graphics.free[0],before);
-});
-
-test('el editor por estación cambia de fila sin salir y la paleta agrega solamente en la estación activa',()=>{
-  const s=screen(),sheet=s.inventory.sheets[0];s.add('bacheo');const free=structuredClone(sheet.graphics.free);s.click('graphic-case-station');
-  s.node('station-graphic-list').events.click({target:{closest:()=>({dataset:{openStationEditor:'s1'}})}});
-  assert.equal(s.node('graphic-focus-canvas').dataset.stationId,'s1');assert.equal(s.node('graphic-focus-dialog').open,true);
-  s.click('graphic-focus-symbol');
-  s.click('graphic-focus-add');assert.equal(s.node('graphic-focus-palette').hidden,false);
-  const add=id=>s.node('graphic-focus-symbols').events.click({target:{closest:()=>({dataset:{focusSymbol:id}})}});
-  add('alcantarilla-existente');assert.equal(s.node('graphic-focus-palette').hidden,true);
-  assert.equal(sheet.graphics.station[0].stationId,'s1');assert.equal(s.node('graphic-focus-symbol')['aria-pressed'],'true');
-  s.node('graphic-focus-station').events.change({target:{value:'s2'}});add('poste-electrico');
-  assert.equal(s.node('graphic-focus-symbol')['aria-pressed'],'true');
-  assert.equal(s.node('graphic-focus-canvas').dataset.stationId,'s2');assert.equal(sheet.graphics.station[1].stationId,'s2');assert.deepEqual(sheet.graphics.free,free);
 });
 
 test('cancelar el zoom restaura toda la vista y libera ambos dedos sin modificar el inventario',()=>{
@@ -268,22 +249,13 @@ test('arrastrar y redimensionar actualiza las posiciones que reciben Excel y PDF
   assert.ok(item.x+item.width<=1.0000001&&item.y+item.height<=1.0000001);
   const placement=graphicPlacements(sheet)[0];assert.ok(Math.abs(placement.width-item.width*GRAPH_FRAME.width)<1e-8);
 });
-test('el caso por estación usa su lista, conserva el otro caso y no deja salir el símbolo de la fila',()=>{
-  const s=screen(),sheet=s.inventory.sheets[0];s.add('bacheo');const free=structuredClone(sheet.graphics.free);
-  s.click('graphic-case-station');s.node('symbol-s1').value='poste-electrico';
-  s.node('station-graphic-list').events.click({target:{closest:()=>({dataset:{addStationSymbol:'s1'}})}});
-  const item=sheet.graphics.station[0];assert.equal(item.stationId,'s1');assert.equal(sheet.graphics.activeMode,'station');
-  s.pointer('pointerdown',{id:item.id,stationId:'s1',x:40,y:5,handle:'se'});s.pointer('pointermove',{id:item.id,stationId:'s1',x:60,y:99});s.pointer('pointerup',{id:item.id,stationId:'s1',x:60,y:99});
-  assert.ok(item.y+item.height<=1.0000001);assert.deepEqual(sheet.graphics.free,free);
-  s.click('graphic-case-free');assert.deepEqual(sheet.graphics.free,free);assert.equal(sheet.graphics.station.length,1);
-});
 test('cancelar un arrastre restaura el dibujo y el teclado mueve y elimina la selección',()=>{
   const s=screen(),sheet=s.inventory.sheets[0];s.add('tomas');const item=sheet.graphics.free[0],original={...item};
   s.pointer('pointerdown',{id:item.id,x:20,y:200});s.pointer('pointermove',{id:item.id,x:35,y:210});s.pointer('pointercancel',{id:item.id});assert.deepEqual(item,original);
   const svg=s.node('graphic-free-canvas'),key=key=>s.node('panel-graphics').events.keydown({key,shiftKey:false,preventDefault(){},target:{closest:()=>svg}});
   key('ArrowLeft');assert.ok(item.x<original.x);key('Delete');assert.equal(sheet.graphics.free.length,0);
 });
-test('los botones y el ángulo giran ambos casos, duplicar conserva el giro y Deshacer lo revierte',()=>{
+test('los botones y el ángulo giran el dibujo, duplicar conserva el giro y Deshacer lo revierte',()=>{
   const s=screen(),sheet=s.inventory.sheets[0];s.add('direccion-agua');
   s.click('graphic-rotate-left');assert.equal(sheet.graphics.free[0].rotation,345);
   s.click('graphic-rotate-right');assert.equal(sheet.graphics.free[0].rotation,0);
@@ -292,10 +264,6 @@ test('los botones y el ángulo giran ambos casos, duplicar conserva el giro y De
   s.click('graphic-duplicate');assert.equal(sheet.graphics.free[1].rotation,90);
   s.click('graphic-rotation-reset');assert.equal(sheet.graphics.free[1].rotation,0);
   s.click('graphic-undo');assert.equal(sheet.graphics.free[1].rotation,90);
-  s.click('graphic-case-station');s.node('symbol-s1').value='alcantarilla-existente';
-  s.node('station-graphic-list').events.click({target:{closest:()=>({dataset:{addStationSymbol:'s1'}})}});
-  s.node('graphic-angle').events.change({target:{value:'45'}});assert.equal(sheet.graphics.station[0].rotation,45);
-  assert.equal(graphicPlacements(sheet)[0].rotation,45);assert.equal(sheet.graphics.free[0].rotation,90);
 });
 test('redimensionar una esquina girada sigue los ejes del símbolo y permite seguir moviéndolo',()=>{
   const s=screen(),sheet=s.inventory.sheets[0];s.add('bacheo');
@@ -305,45 +273,36 @@ test('redimensionar una esquina girada sigue los ejes del símbolo y permite seg
   const moved={...item};s.pointer('pointerdown',{id:item.id,x:40,y:200});s.pointer('pointermove',{id:item.id,x:42,y:200});s.pointer('pointerup',{id:item.id});
   assert.ok(item.x>moved.x);assert.equal(item.rotation,90);
 });
-test('la flecha circular gira arrastrando alrededor del centro y permite deshacer en ambos casos',()=>{
+test('la flecha circular gira arrastrando alrededor del centro y permite deshacer en el editor',()=>{
   const s=screen(),sheet=s.inventory.sheets[0];s.add('alcantarilla-existente');
   function turn(item,stationId,height){
     const cx=(item.x+item.width/2)*GRAPH_FRAME.width,cy=(item.y+item.height/2)*height;
     s.pointer('pointerdown',{id:item.id,stationId,x:cx,y:cy-15,handle:'rotate'});
     s.pointer('pointermove',{id:item.id,stationId,x:cx+15,y:cy});s.pointer('pointerup',{id:item.id,stationId});
-    assert.ok(Math.abs(item.rotation-90)<1e-7);assert.match(s.node(stationId?`svg-${stationId}`:'graphic-free-canvas').innerHTML,/data-handle="rotate"/);
+    assert.ok(Math.abs(item.rotation-90)<1e-7);assert.match(s.node('graphic-free-canvas').innerHTML,/data-handle="rotate"/);
   }
   turn(sheet.graphics.free[0],undefined,GRAPH_FRAME.height);s.click('graphic-undo');assert.equal(sheet.graphics.free[0].rotation,0);
-  s.click('graphic-case-station');s.node('symbol-s1').value='alcantarilla-existente';s.node('station-graphic-list').events.click({target:{closest:()=>({dataset:{addStationSymbol:'s1'}})}});
-  turn(sheet.graphics.station[0],'s1',15.386);assert.equal(sheet.graphics.free[0].rotation,0);
 });
 test('cancelar el giro restaura el ángulo y el tamaño previos',()=>{
   const s=screen(),sheet=s.inventory.sheets[0];s.add('bacheo');const item=sheet.graphics.free[0],before={...item};
   const cx=(item.x+item.width/2)*GRAPH_FRAME.width,cy=(item.y+item.height/2)*GRAPH_FRAME.height;
   s.pointer('pointerdown',{id:item.id,x:cx,y:cy-15,handle:'rotate'});s.pointer('pointermove',{id:item.id,x:cx+15,y:cy});s.pointer('pointercancel',{id:item.id});assert.deepEqual(item,before);
 });
-test('dos dedos agrandan y achican proporcionalmente en ambos casos y un solo Deshacer revierte el gesto',()=>{
-  for(const mode of ['free','station']) {
-    const s=screen(),sheet=s.inventory.sheets[0],stationId=mode==='station'?'s1':undefined;
-    // La figura delgada deja margen para probar la ampliación en el renglón.
-    if(stationId){s.click('graphic-case-station');s.node('symbol-s1').value='alcantarilla-nueva';s.node('station-graphic-list').events.click({target:{closest:()=>({dataset:{addStationSymbol:stationId}})}});}
-    else s.add('alcantarilla-nueva');
-    const item=sheet.graphics[mode][0],before={...item},height=stationId?15.386:GRAPH_FRAME.height;
-    const cx=(item.x+item.width/2)*GRAPH_FRAME.width,cy=(item.y+item.height/2)*height;
-    const touch=(type,pointerId,x,y,id)=>s.pointer(type,{pointerType:'touch',pointerId,x,y,id,stationId});
-    const commits=s.commits;
-    touch('pointerdown',1,cx-2,cy,item.id);touch('pointerdown',2,cx+2,cy);
-    touch('pointermove',1,cx-3,cy);touch('pointermove',2,cx+3,cy);
-    // La altura de una línea muy fina se guarda redondeada a ocho decimales.
-    assert.ok(Math.abs(item.width-before.width*1.5)<1e-8);assert.ok(Math.abs(item.height-before.height*1.5)<1e-8);
-    assert.equal(s.commits,commits);assert.equal(s.node('graphic-selected').textContent.includes('Seleccioná'),false);
-    touch('pointermove',1,cx-1.5,cy);touch('pointermove',2,cx+1.5,cy);
-    assert.ok(Math.abs(item.width/before.width-.75)<1e-6);
-    touch('pointerup',2,cx+1.5,cy);const pinned={...item};
-    touch('pointermove',1,cx-.5,cy);assert.ok(Math.abs(item.x-pinned.x-1/GRAPH_FRAME.width)<1e-6);
-    touch('pointerup',1,cx-.5,cy);assert.equal(s.commits,commits+1);
-    s.click('graphic-undo');assert.deepEqual(sheet.graphics[mode][0],before);
-  }
+test('dos dedos agrandan y achican proporcionalmente y un solo Deshacer revierte el gesto',()=>{
+  const s=screen(),sheet=s.inventory.sheets[0];s.add('alcantarilla-nueva');
+  const item=sheet.graphics.free[0],before={...item},cx=(item.x+item.width/2)*GRAPH_FRAME.width,cy=(item.y+item.height/2)*GRAPH_FRAME.height;
+  const touch=(type,pointerId,x,y,id)=>s.pointer(type,{pointerType:'touch',pointerId,x,y,id});
+  const commits=s.commits;
+  touch('pointerdown',1,cx-2,cy,item.id);touch('pointerdown',2,cx+2,cy);
+  touch('pointermove',1,cx-3,cy);touch('pointermove',2,cx+3,cy);
+  assert.ok(Math.abs(item.width-before.width*1.5)<1e-8);assert.ok(Math.abs(item.height-before.height*1.5)<1e-8);
+  assert.equal(s.commits,commits);
+  touch('pointermove',1,cx-1.5,cy);touch('pointermove',2,cx+1.5,cy);
+  assert.ok(Math.abs(item.width/before.width-.75)<1e-6);
+  touch('pointerup',2,cx+1.5,cy);const pinned={...item};
+  touch('pointermove',1,cx-.5,cy);assert.ok(Math.abs(item.x-pinned.x-1/GRAPH_FRAME.width)<1e-6);
+  touch('pointerup',1,cx-.5,cy);assert.equal(s.commits,commits+1);
+  s.click('graphic-undo');assert.deepEqual(sheet.graphics.free[0],before);
 });
 test('un dedo puede agarrar una línea fina aun si el evento alcanza el fondo y no el SVG del símbolo',()=>{
   const s=screen(),sheet=s.inventory.sheets[0];s.add('alcantarilla-existente');const item=sheet.graphics.free[0],before={...item};

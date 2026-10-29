@@ -44,11 +44,11 @@ test('al recuperar el orden, los símbolos se validan en su fila anterior y sigu
   const inv=createInventory(),sheet=inv.sheets[0];
   sheet.stations=Array.from({length:9},(_,i)=>entry(`${i+1},0`,{id:`s${i}`}));sheet.stations[8].station='0,0';
   const oldHeight=stationFrame(sheet.stations,'s8').height;
-  sheet.graphics.activeMode='station';sheet.graphics.free=[createGraphic('bacheo')];
-  sheet.graphics.station=[constrainGraphic(createGraphic('bacheo',{stationId:'s8',frameHeight:oldHeight}),{width:.12,height:.8,rotation:45},oldHeight)];
-  const free=structuredClone(sheet.graphics.free),restored=fromBackup(toBackup(inv),catalog).sheets[0];
-  assert.equal(restored.stations[0].id,'s8');assert.equal(restored.graphics.station[0].stationId,'s8');assert.deepEqual(restored.graphics.free,free);
-  const box=graphicBounds(restored.graphics.station[0],stationFrame(restored.stations,'s8').height);
+  sheet.graphics={activeMode:'station',free:[],station:[]};
+  sheet.graphics.station=[constrainGraphic(createGraphic('bacheo',{stationId:'s8',frameHeight:oldHeight}),{width:.12,height:.8,rotation:45,stationId:'s8'},oldHeight)];
+  const restored=fromBackup(toBackup(inv),catalog).sheets[0];
+  assert.equal(restored.stations[0].id,'s8');assert.equal(restored.graphics.free[0].id,sheet.graphics.station[0].id);assert.equal(Object.hasOwn(restored.graphics,'station'),false);
+  const box=graphicBounds(restored.graphics.free[0]);
   assert.ok(box.x>=-1e-7&&box.y>=-1e-7&&box.x+box.width<=1+1e-7&&box.y+box.height<=1+1e-7);
 });
 test('cada hoja exporta sus estaciones y los respaldos nuevos y anteriores se recuperan',()=>{

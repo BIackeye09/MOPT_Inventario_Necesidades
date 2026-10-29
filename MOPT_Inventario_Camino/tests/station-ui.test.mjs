@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {setupStations,setupEditorTabs} from '../dist/js/station-ui.js';
 import {createInventory,addSheet} from '../dist/js/model.js';
-import {createGraphic,stationFrame,graphicPlacements} from '../dist/js/graphics-model.js';
+import {createGraphic} from '../dist/js/graphics-model.js';
 
 function screen() {
   const nodes=new Map();
@@ -62,15 +62,15 @@ test('las estaciones equivalentes no se repiten al agregar, editar, cambiar de h
   s.inventory.activeSheetId=s.inventory.sheets[1].id;s.ui.refresh();s.node('station-km').value='2.870';await s.submit();
   assert.equal(s.inventory.sheets[1].stations.length,0);assert.match(s.node('station-error').textContent,/hoja 1/i);
 });
-test('agregar y editar ordena numéricamente cada hoja y conserva los detalles y símbolos de cada estación',async()=>{
+test('agregar y editar ordena numéricamente cada hoja y conserva los detalles sin mover el dibujo de la carretera',async()=>{
   const s=screen();
   for(const value of ['12,01','2,870','2,864','2,9']){s.node('station-km').value=value;s.node('station-observations').value='Hallazgo '+value;await s.submit();}
   const sheet=s.inventory.sheets[0];assert.deepEqual(sheet.stations.map(r=>r.station),['2,864','2,870','2,9','12,01']);
-  const target=sheet.stations[1];sheet.graphics.activeMode='station';sheet.graphics.station=[createGraphic('bacheo',{stationId:target.id,frameHeight:stationFrame(sheet.stations,target.id).height})];
-  const before=graphicPlacements(sheet)[0].y;
+  const target=sheet.stations[1];sheet.graphics.free=[createGraphic('bacheo')];
+  const before=structuredClone(sheet.graphics.free);
   await s.click({editStation:target.id});s.node('station-km').value='1,0';await s.submit();
   assert.equal(sheet.stations[0].id,target.id);assert.equal(sheet.stations[0].observations,'Hallazgo 2,870');
-  assert.equal(sheet.graphics.station[0].stationId,target.id);assert.ok(graphicPlacements(sheet)[0].y>before);
+  assert.deepEqual(sheet.graphics.free,before);
   assert.match(s.node('station-order-note').textContent,/menor a mayor/i);
 });
 test('una hoja llena permite editar y continuar en una hoja nueva sin sobrescribir estaciones',async()=>{

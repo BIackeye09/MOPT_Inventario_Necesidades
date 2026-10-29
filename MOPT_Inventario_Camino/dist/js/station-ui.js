@@ -3,7 +3,6 @@ import {createId} from './ids.js';
 import {STATION_CAPACITY, stationFields, validateStation, cleanStation, formatStation, formatMetres,validStationInput,parseStation,sortStations,findDuplicateStation,duplicateStationValues} from './stations.js';
 import {checkStationForDocument} from './documents.js';
 import {sheetLabel} from './model.js';
-import {removeStationGraphics,reflowStationGraphics} from './graphics-model.js';
 const $=id=>document.getElementById(id);
 const ids={station:'station-km',diameter:'station-diameter',culvertLength:'station-length',
   headwallNumber:'station-number',headwallType:'station-type',observations:'station-observations'};
@@ -82,7 +81,7 @@ export function setupStations({getInventory,commit,notify,confirmAction,nextShee
       if(sheet().id!==active.id||editingId!==saveId)return;
       const duplicate=duplicateError(value.station,saveId);if(duplicate)throw new Error(duplicate);
       if(active.stations!==records)throw new Error('La lista cambió mientras se guardaba. Revisá los datos y volvé a guardar.');
-      active.stations=ordered;reflowStationGraphics(active,records);
+      active.stations=ordered;
       const edited=Boolean(saveId);reset();commit({sheets:true});
       notify(`Estación ${formatStation(value.station)} ${edited?'actualizada':'agregada'}.`);
       $('station-km').focus();
@@ -97,9 +96,8 @@ export function setupStations({getInventory,commit,notify,confirmAction,nextShee
       editingId=record.id;fill(record);refresh();$('station-km').focus();
     } else if(remove) {
       const record=records.find(r=>r.id===remove.dataset.deleteStation);if(!record)return;
-      if(await confirmAction(`Eliminar estación ${formatStation(record.station)}`,'Se eliminarán también sus símbolos del caso por estación. Las estaciones restantes se acomodarán de abajo hacia arriba.','Eliminar estación')) {
+      if(await confirmAction(`Eliminar estación ${formatStation(record.station)}`,'Se quitarán los datos de esta estación. Las estaciones restantes se acomodarán de abajo hacia arriba; el dibujo de la carretera se conserva.','Eliminar estación')) {
         active.stations=records.filter(r=>r.id!==record.id);
-        removeStationGraphics(active,record.id,records);
         if(editingId===record.id)reset();commit({sheets:true});notify('Estación eliminada.');
       }
     }

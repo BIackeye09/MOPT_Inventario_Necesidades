@@ -1,28 +1,21 @@
-COMPARAR LOS DOS CASOS DE REPRESENTACIÓN GRÁFICA
+EJEMPLOS DEL INVENTARIO FINAL
 
-1. En la aplicación, usá Abrir un respaldo y elegí comparar-dos-casos.json.
-   Se ofrece descargar una copia del borrador actual antes de abrirlo.
-2. Abrí Representación gráfica y seleccioná Caso 1: Editor completo.
-3. Mové un símbolo, cambiale el tamaño y giralo arrastrando la flecha circular,
-   como en Word. También podés usar los botones de 15° o Ángulo (°).
-   Descargá Excel o PDF para comprobar su orientación.
-4. Seleccioná Caso 2: Por estación. Su dibujo de muestra sigue intacto.
-5. Elegí una figura en una estación y pulsá Agregar símbolo. Probá moverla
-   y cambiarle el tamaño y el giro dentro del renglón.
-6. Descargá este caso y compará ambos archivos con tu jefa.
+representacion-grafica.xls y representacion-grafica.pdf muestran cinco
+símbolos de la carretera, con sus posiciones, tamaños y giros. La simbología,
+los colores y el documento base son los originales.
 
-Los ejemplos XLS y PDF incluidos muestran las mismas cinco figuras en
-las mismas posiciones y giros (90°, 30°, 345°, 45° y 270°). Así se puede comparar el modo de trabajar de cada
-caso manteniendo el mismo resultado de documento.
+Para probar en la app, registrá las estaciones y abrí Representación gráfica.
+Tocá Abrir dibujo a pantalla completa en el teléfono. En Símbolo podés
+agregar figuras, moverlas y girarlas. Los tiradores laterales ajustan el largo;
+los de arriba y abajo el grosor. Mover y zoom permite recorrer la vista.
+Descargá Excel o PDF para comprobar el resultado sobre la plantilla.
 
-PROBAR EL CROQUIS
+croquis-localizacion.xls y croquis-localizacion.pdf muestran trazos libres,
+un fragmento borrado y las observaciones del reverso.
 
-1. Abrí croquis-localizacion.json como respaldo.
-2. Entrá en Parte trasera · Croquis. Seleccioná Lápiz y dibujá un trazo.
-3. Seleccioná Borrador y pasalo por una parte del trazo para quitar ese fragmento.
-4. Probá Deshacer, Rehacer y el ajuste de Tamaño.
-5. Con zoom, Mover lienzo permite recorrer el dibujo con ratón o dedo.
-6. Descargá Excel o PDF y revisá el croquis en la segunda página.
+Los JSON incluidos son muestras internas para las herramientas del proyecto;
+esta versión no tiene un botón para importarlos. El borrador de la app se
+guarda automáticamente en el navegador y dispositivo que se esté usando.
 
-croquis-localizacion.xls y croquis-localizacion.pdf incluyen el mismo dibujo
-de muestra, con un fragmento borrado. El marco y los títulos son los originales.
+Para regenerar la muestra gráfica desde el proyecto:
+node scripts/generar_ejemplos_graficos.mjs
