@@ -1,6 +1,6 @@
 // Reglas del inventario independientes de la pantalla para poder verificarlas.
 import {restoreStations,sortStations,restoreStationDraft} from './stations.js';
-import {restoreGraphics,createGraphics} from './graphics-model.js';
+import {restoreGraphics,createGraphics,reflowStationSymbols} from './graphics-model.js';
 import {restoreSketch,createSketch} from './sketch-model.js';
 import {restoreBackObservations} from './back-observations.js';
 import {createId as id} from './ids.js';
@@ -23,7 +23,9 @@ export function createInventory() {
 
 export function selectRoad(inventory, road) {
   // Se copia el registro para que una corrección no modifique el catálogo.
-  return { ...inventory, road: { ...road, source: { ...road.source }, mode: 'catalog' } };
+  // Cambiar de camino también cambia la superficie; nunca arrastra la del anterior.
+  const surface=SURFACES.some(item=>item.code===road.surface?.code)?road.surface.code:'';
+  return { ...inventory,surface, road: { ...road, source: { ...road.source },surface:{...road.surface}, mode: 'catalog' } };
 }
 
 export function createManualRoad() {
@@ -112,6 +114,7 @@ export function fromBackup(raw, catalog) {
     const stations=restoreStations(s?.stations);
     // La lectura conserva el dibujo libre y adapta los borradores antiguos.
     const sheet={id:clean(s?.id,120),stations:sortStations(stations),stationDraft:restoreStationDraft(s?.stationDraft,stations),graphics:restoreGraphics(s?.graphics,stations),sketch:restoreSketch(s?.sketch),backObservations:restoreBackObservations(s?.backObservations)};
+    reflowStationSymbols(sheet,stations);
     return sheet;
   });
   if (sheets.some(s => !s.id) || new Set(sheets.map(s => s.id)).size !== sheets.length) throw new Error('La numeración de hojas del respaldo está dañada.');

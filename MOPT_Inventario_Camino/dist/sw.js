@@ -1,5 +1,6 @@
 // La caché solo guarda los recursos de esta aplicación, nunca otras páginas del sitio.
-const CACHE = 'mopt-inventario-v1.1.0';
+// Los textos y botones de la interfaz móvil se actualizan junto a sus estilos.
+const CACHE = 'mopt-inventario-v1.3.1';
 const ASSETS = [
   "./",
   "./index.html",

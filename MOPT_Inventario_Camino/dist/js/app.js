@@ -67,12 +67,21 @@ function populateCantons(select, province, selected = '', all = false) {
   select.value = selected;
 }
 
+function renderSurfaceHint(){
+  const reference=inventory.road?.mode==='catalog'?inventory.road.surface:null,
+    name=SURFACES.find(item=>item.code===reference?.code)?.name;
+  $('surface-hint').textContent=name?`Referencia del catálogo 2024: ${name}. Podés cambiarla según lo observado en carretera.`:
+    reference?.sourceName?`El catálogo registra «${reference.sourceName}». Seleccioná su equivalencia en la plantilla según lo observado.`:
+    inventory.road?.mode==='catalog'?'Este tramo no tiene una superficie identificada en el catálogo. Seleccioná la observada.':'Elegí la superficie observada en carretera.';
+}
+
 function renderForm() {
   const r = inventory.road;
   const manual = r?.mode === 'manual';
   $('inventory-number').value = inventory.number;
   $('macro-region').value = 'V';
   $('surface').value = inventory.surface;
+  renderSurfaceHint();
   $('road-type').value = r?.type || '';
   $('road-type').disabled = !manual;
   for (const [field, prop] of [['code', 'code'], ['route', 'route'], ['from', 'from'], ['to', 'to'], ['length', 'lengthKm'], ['section', 'section']]) {
@@ -166,7 +175,7 @@ function renderResults(reset = false) {
 
 function setManualRoad() {
   if ($('catalog-dialog').open) $('catalog-dialog').close();
-  inventory = { ...inventory, road: createManualRoad() };
+  inventory = { ...inventory,surface:'', road: createManualRoad() };
   commit({ form: true });
   $('road-code').focus();
   toast('Ingreso manual habilitado. Completá los datos del camino.');
@@ -213,13 +222,13 @@ function bindEvents() {
     inventory = selectRoad(inventory, road);
     commit({ form: true });
     $('catalog-dialog').close();
-    toast(`Camino ${road.code} seleccionado. Revisá el tramo y elegí la superficie.`);
+    toast(`Camino ${road.code} seleccionado. ${inventory.surface?'La superficie se completó con el catálogo; podés corregirla.':'Revisá el tramo y seleccioná la superficie observada.'}`);
     (road.needsReview ? $('road-from') : $('surface')).focus();
   });
   $('manual-road').addEventListener('click', setManualRoad);
   $('catalog-manual').addEventListener('click', setManualRoad);
   $('inventory-number').addEventListener('input', event => { inventory.number = event.target.value; commit(); });
-  $('surface').addEventListener('change', event => { inventory.surface = event.target.value; commit(); });
+  $('surface').addEventListener('change', event => { inventory.surface = event.target.value; renderSurfaceHint();commit(); });
   for (const [field, prop] of [['code', 'code'], ['route', 'route'], ['from', 'from'], ['to', 'to'], ['length', 'lengthKm']]) {
     $(`road-${field}`).addEventListener('input', event => {
       if (!inventory.road) return;
@@ -321,7 +330,7 @@ async function boot() {
     populateCantons($('filter-canton'), '4', '', true);
     renderForm(); renderSheets(); renderDerived(); bindEvents();
     editorTabs=setupEditorTabs({onSelect:name=>{if(name==='graphics')graphics?.activate();if(name==='sketch')sketch?.activate();}});
-    stations=setupStations({getInventory:()=>inventory,commit,notify:toast,confirmAction,nextSheet:()=>{
+    stations=setupStations({getInventory:()=>inventory,commit,notify:toast,confirmAction,onGraphicsChange:()=>graphics?.resetHistory(),showGraphic:id=>{editorTabs.select('graphics');graphics?.showSymbol(id);},nextSheet:()=>{
       if(inventory.sheets.length>=1000){toast('El inventario ya tiene 1000 hojas.');return;}
       inventory=addSheet(inventory);inventory.activeSheetId=inventory.sheets.at(-1).id;commit({sheets:true});
     }});

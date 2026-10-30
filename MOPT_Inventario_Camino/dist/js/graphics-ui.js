@@ -94,7 +94,15 @@ export function setupGraphics({getInventory,commit,notify}) {
     controls();
   }
   function selection(id){selected=id;paintAll();}
-  function changed(before) {remember(before);signature='';commit();paintAll();}
+  function changed(before) {
+    // Una corrección manual conserva el vínculo con la estación, pero deja de
+    // recalcular su tamaño. Al ordenar estaciones solo acompaña su renglón.
+    for(const item of list()){
+      const previous=before.find(value=>value.id===item.id);
+      if(item.placement&&previous&&['x','y','width','height','rotation'].some(key=>item[key]!==previous[key]))item.placement={...item.placement,manual:true};
+    }
+    remember(before);signature='';commit();paintAll();
+  }
   function add(symbolId,position) {
     if(!symbolsEnabled())return;
     if(list().length>=GRAPH_LIMIT){notify(`Esta hoja ya tiene ${GRAPH_LIMIT} símbolos.`);return;}
@@ -138,6 +146,7 @@ export function setupGraphics({getInventory,commit,notify}) {
     if(!symbolsEnabled())return;
     const item=chosen();if(!item||item.locked||list().length>=GRAPH_LIMIT)return;
     const before=copy(list()),next=constrainGraphic({...item,id:createId()},{x:item.x+.04,y:item.y+.015},frame().height);
+    if(next.placement)next.placement={...next.placement,manual:true};
     list().push(next);selected=next.id;changed(before);
   }
   function remove() {
@@ -484,5 +493,7 @@ export function setupGraphics({getInventory,commit,notify}) {
   if(globalThis.ResizeObserver)new ResizeObserver(()=>{if(!drag)paint($('graphic-free-canvas'));}).observe($('graphic-free-viewport'));
   if(globalThis.ResizeObserver)new ResizeObserver(()=>{if(full){abortGesture();abortView(true);fitFocus();}}).observe($('graphic-focus-canvas'));
   globalThis.addEventListener?.('pagehide',()=>{abortGesture();abortView();});
-  refresh();return {refresh,activate};
+  function resetHistory(){histories.delete(historyKey());signature='';}
+  function showSymbol(id){refresh();selection(list().some(item=>item.id===id)?id:null);openFocus();}
+  refresh();return {refresh,activate,resetHistory,showSymbol};
 }

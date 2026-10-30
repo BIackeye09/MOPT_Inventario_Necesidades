@@ -5,10 +5,35 @@ import { readFile, access } from 'node:fs/promises';
 import vm from 'node:vm';
 import { createInventory, selectRoad, createManualRoad, addSheet, removeSheet, sheetLabel,
   validateHeader, parseKm, searchRoads, SURFACES, toBackup, fromBackup } from '../dist/js/model.js';
+import {documentValues} from '../dist/js/documents.js';
 
 const catalog = JSON.parse(await readFile(new URL('../dist/data/caminos.json', import.meta.url), 'utf8'));
 const road = section => catalog.roads.find(r => r.section === section);
 const complete = () => ({ ...selectRoad(createInventory(), road('40000')), surface: '1' });
+test('la superficie convierte los códigos del Excel a la leyenda DPA-301 en rutas y travesías',()=>{
+  const mapping={'1':'1','2':'3','3':'3','4':'4','6':'5','9':'2'};
+  for(const record of catalog.roads){
+    assert.equal(record.surface.code,mapping[record.surface.sourceCode]||'');
+    assert.equal(record.surface.column,record.network==='Travesía'?'AM':'BE');
+    assert.equal(selectRoad(createInventory(),record).surface,record.surface.code);
+  }
+  assert.equal(road('40410').surface.sourceCode,'2');assert.equal(documentValues(selectRoad(createInventory(),road('40410'))).surface,3);
+  const concrete=catalog.roads.find(r=>r.surface.sourceCode==='9');assert.equal(documentValues(selectRoad(createInventory(),concrete)).surface,2);
+  assert.equal(catalog.audit.surfaceMappedCount,1234);assert.equal(catalog.audit.surfaceReviewCount,89);
+});
+test('seleccionar otro camino actualiza la superficie y deja pendiente una equivalencia desconocida',()=>{
+  let inv=selectRoad(createInventory(),road('40000'));assert.equal(inv.surface,'1');
+  inv.surface='5';inv=selectRoad(inv,road('40410'));assert.equal(inv.surface,'3');
+  const special=catalog.roads.find(r=>r.surface.sourceCode==='8'),previous=structuredClone(special);
+  inv=selectRoad(inv,special);assert.equal(inv.surface,'');assert.ok(validateHeader(inv).some(error=>error.field==='surface'));
+  inv.road.surface.sourceName='Corrección de prueba';assert.deepEqual(special,previous);
+});
+test('las superficies corregidas y los inventarios anteriores mantienen su selección al reabrir',()=>{
+  const inv=selectRoad(createInventory(),road('40410'));inv.surface='4';const original=structuredClone(inv);
+  const restored=fromBackup(toBackup(inv),catalog);assert.equal(restored.surface,'4');assert.equal(restored.road.surface.code,'3');assert.deepEqual(inv,original);
+  const old=JSON.parse(toBackup(inv));delete old.inventory.road.surface;old.inventory.surface='';
+  const recovered=fromBackup(old,catalog);assert.equal(recovered.surface,'');assert.equal(selectRoad(recovered,recovered.road).surface,'3');
+});
 
 test('el código de Heredia toma ruta y longitud del Excel 2024', () => {
   const r = road('40000');

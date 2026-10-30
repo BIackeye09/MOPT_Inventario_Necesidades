@@ -1,6 +1,6 @@
 # Subir el inventario completo a GitHub
 
-Versión 1.1.0 · 29 de octubre de 2026.
+Versión 1.3.1 · 30 de octubre de 2026.
 
 El paquete completo contiene **99 archivos**. El editor único de la carretera completa, el croquis, Excel, PDF, las fuentes, las pruebas, los ejemplos y el servidor Dart están incluidos. Los símbolos y sus datos se agruparon en `dist/js/symbol-catalog.js`; sus imágenes conservan exactamente los bytes originales.
 
@@ -8,11 +8,11 @@ GitHub permite cargar hasta 100 archivos **por subida desde el navegador**. Ese 
 
 ## Opción 1: una sola subida
 
-1. Descomprimí `MOPT_Inventario_Camino_v1.1.0.zip`.
+1. Descomprimí `MOPT_Inventario_Camino_v1.3.1.zip`.
 2. Entrá a la carpeta `MOPT_Inventario_Camino` que queda dentro.
 3. En la raíz de tu repositorio, elegí **Add file → Upload files**.
 4. Arrastrá el contenido de esa carpeta, conservando los nombres y las carpetas. No arrastrés el ZIP ni agregués otra carpeta exterior con el nombre del proyecto.
-5. Escribí un mensaje como `Actualizar inventario a 1.1.0` y guardá los cambios.
+5. Escribí un mensaje como `Actualizar inventario a 1.3.1` y guardá los cambios.
 
 ## Opción 2: tres cargas pequeñas
 
@@ -49,7 +49,9 @@ Los ejemplos gráficos se llaman ahora `representacion-grafica.xls`, `.pdf` y `.
 
 ## Comprobación
 
-Abrí la web, recargá con conexión y verificá que al pie aparezca **1.1.0**. Probá Mis inventarios, la recuperación de un formulario pendiente, el editor gráfico, el croquis, Vista previa y las descargas individuales y conjuntas del menú Más. El borrador sigue guardado en el mismo navegador y dirección.
+En teléfono, verificá que se lean **Nuevo inventario** y **Agregar hoja** completos, que las etiquetas estén en azul marino y las ayudas en verde petróleo, con letras más grandes. En pantallas de hasta 360 px, Agregar hoja aparece en una fila propia.
+
+Abrí la web, recargá con conexión y verificá que al pie aparezca **1.3.1**. Probá **Anterior** y **Siguiente** al final de las secciones. Elegí el camino `4-0410-00`: la superficie debe completarse como **3 · Tratamiento superficial**. En Estaciones, el ejemplo de estación debe ser **0,000**. Abrí **Símbolos** de un registro, elegí por nombre o imagen y probá aceras, cunetas y carretera; **Ambos carriles** debe colocar una sola figura. Los símbolos existentes deben verse tanto en el renglón de la lista como al elegir otra figura. Repetir un símbolo en esa ubicación debe mostrar **Ya colocado** sin duplicarlo. Agregá una estación menor para comprobar que sus figuras acompañan el orden. Probá también Mis inventarios, la recuperación de un formulario pendiente, el editor gráfico, el croquis, Vista previa y las descargas individuales y conjuntas del menú Más. El borrador sigue guardado en el mismo navegador y dirección.
 
 ## Fuentes oficiales
 

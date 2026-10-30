@@ -15,6 +15,9 @@ PROVINCIAS = {
     "1": "San José", "2": "Alajuela", "3": "Cartago", "4": "Heredia",
     "5": "Guanacaste", "6": "Puntarenas", "7": "Limón",
 }
+# Códigos de «Códigos 2» del Excel 2024 hacia la leyenda B de DPA-301.
+# Los materiales especiales sin equivalencia explícita quedan para revisión.
+SUPERFICIES_DPA = {1: "1", 2: "3", 3: "3", 4: "4", 6: "5", 9: "2"}
 
 
 def texto(valor):
@@ -84,6 +87,9 @@ def main():
     args = parser.parse_args()
     libro = openpyxl.load_workbook(args.referencias / "red-vial-nacional-2024.xlsx", read_only=True, data_only=True)
     relacion = codigos_rtf(args.referencias / "red-nacional-heredia.rtf")
+    nombres_superficie = {entero(f[0]): texto(f[1])
+                          for f in libro["Códigos 2"].iter_rows(values_only=True)
+                          if entero(f[0]) is not None and f[1]}
 
     cantones = {}
     for fila in libro["Longitud Por Provincia"].iter_rows(values_only=True):
@@ -112,6 +118,13 @@ def main():
         # El RTF confirma el formato de código en las secciones relacionadas.
         # Las demás conservan la sección exacta del Excel; no se inventa un código.
         codigo = relacion.get(sec, sec)
+        # BE/BF identifican el material de ruedo; BC/BD describen el terreno.
+        # Las travesías usan AM con la misma tabla de códigos del libro.
+        columna = "AM" if hoja == "Travesías" else "BE"
+        codigo_superficie = entero(fila[38] if hoja == "Travesías" else fila[56])
+        nombre_superficie = nombres_superficie.get(codigo_superficie, "")
+        if hoja != "Travesías":
+            nombre_superficie = texto(fila[57]) or nombre_superficie
         caminos.append({
             "id": f"N:{hoja}:{sec}:{n}", "type": "N", "code": codigo, "section": sec,
             "route": clave(ruta), "lengthKm": round(float(longitud), 6),
@@ -122,6 +135,10 @@ def main():
             "needsReview": revisar,
             "source": {"file": "Red Vial Nacional 2024(1).xlsx", "sheet": hoja, "row": n},
             "codeSource": "red nacional heredia(1).rtf" if sec in relacion else "Sección del Excel 2024",
+            "surface": {"code": SUPERFICIES_DPA.get(codigo_superficie, ""),
+                        "sourceCode": str(codigo_superficie) if codigo_superficie is not None else "",
+                        "sourceName": nombre_superficie, "column": columna,
+                        "labelColumn": "" if hoja == "Travesías" else "BF"},
         })
 
     for n, f in enumerate(libro["RVN_0524"].iter_rows(min_row=2, values_only=True), 2):
@@ -136,6 +153,8 @@ def main():
         "needsReviewCount": sum(c["needsReview"] for c in caminos),
         "cantonCount": len(cantones), "skippedRows": omitidas,
         "duplicateSections": [s for s, total in collections.Counter(c["section"] for c in caminos).items() if total > 1],
+        "surfaceMappedCount": sum(bool(c["surface"]["code"]) for c in caminos),
+        "surfaceReviewCount": sum(not c["surface"]["code"] for c in caminos),
     }
     salida = {"version": 1, "sourceYear": 2024, "provinces": PROVINCIAS, "cantons": cantones,
               "roads": caminos, "audit": auditoria}

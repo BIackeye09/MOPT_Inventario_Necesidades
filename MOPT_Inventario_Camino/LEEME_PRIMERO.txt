@@ -1,5 +1,5 @@
 INVENTARIO DE NECESIDADES DEL CAMINO · MOPT
-Versión 1.1.0 · 29/10/2026
+Versión 1.3.1 · 30/10/2026
 
 PARA INICIAR
 1. Descomprimí toda la carpeta.
@@ -10,8 +10,34 @@ También podés usar Live Server sobre dist/index.html. La instalación como
 app requiere HTTPS o localhost. El puerto 8081 evita el conflicto con el reporte.
 
 VERSIÓN FINAL
+- En teléfono, las letras son más grandes y oscuras: etiquetas azul marino,
+  ayudas verde petróleo y campos legibles. Nuevo inventario y Agregar hoja
+  muestran sus nombres completos. En pantallas pequeñas se acomodan en filas.
+- Anterior y Siguiente al final de cada sección muestran el nombre del destino.
+  Conservan los formularios pendientes al avanzar o retroceder.
+- Al elegir un camino se completa la superficie desde el Excel 2024 cuando
+  tiene equivalencia con DPA-301. Podés corregirla según lo observado.
+  El código 2 del catálogo se convierte en 3; el 9 se convierte en 2.
+  Los materiales especiales sin equivalencia quedan para selección manual.
+- Los campos usan ejemplos sencillos: estación 0,000, diámetro 0,5 m,
+  longitud 1 m y número de cabezales 1.
 - Un solo editor gráfico: la carretera completa de cada hoja.
 - No hay selector de casos ni editor gráfico por estación.
+- En Estaciones, el botón Símbolos de cada registro permite elegir por nombre
+  o imagen y colocar automáticamente cualquiera de las 18 figuras.
+- Ubicaciones: acera izquierda/derecha, cuneta o caño izquierda/derecha,
+  y carretera izquierda/derecha/ambos carriles. Ambos usa una sola figura.
+- El tamaño se ajusta a la franja y al renglón de la estación, sin escala
+  en metros. Ver en gráfico permite afinar largo, grosor, posición y giro.
+- Los símbolos vinculados se trasladan al cambiar el orden de estaciones.
+  Eliminar la estación también quita sus figuras vinculadas; las libres
+  se conservan. Ubicación permite volver a aplicar el ajuste automático.
+- Elegir símbolos al guardar la estación abre esa ventana al guardar.
+- Estaciones muestra el dibujo de cada renglón y todos sus símbolos por nombre.
+  La ventana de colocación muestra también los ya colocados, incluidos dibujos
+  libres que cruzan el renglón. Negro: colocado; atenuado: por colocar.
+- Ya colocado desactiva el agregado repetido en esa ubicación, también si
+  el símbolo se ajustó manualmente. Las figuras anteriores no se borran.
 - Se conservan los dibujos guardados de la carretera completa. Si un
   borrador solo tenía un dibujo por estación, se adapta al editor único.
 - Las estaciones admiten una sola coma o punto y de 1 a 3 decimales.
@@ -58,7 +84,7 @@ ACTUALIZAR TU WEB
 Reemplazá dist/ dentro de la carpeta publicable que ya usa tu hosting,
 conservando las rutas. No subás el ZIP como página web.
 Si tu repositorio tiene MOPT_Inventario_Camino/dist, reemplazá esa carpeta.
-Recargá con conexión hasta ver 1.1.0 al pie de la app.
+Recargá con conexión hasta ver 1.3.1 al pie de la app.
 El proyecto tiene 99 archivos y dist/ tiene 52. Ver SUBIR_A_GITHUB.md.
 
 EJEMPLOS

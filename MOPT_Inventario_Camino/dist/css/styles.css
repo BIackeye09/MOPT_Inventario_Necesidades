@@ -124,9 +124,9 @@ dialog.sketch-dialog{padding:0;background:#fff;box-shadow:none}
 @media(max-width:700px),(max-height:500px) and (max-width:1000px){
   body{padding-bottom:calc(74px + env(safe-area-inset-bottom))}.app-header{padding:8px 12px;gap:12px;min-height:52px}.brand{font-size:18px;gap:8px}.brand-mark{width:27px;height:30px}.brand small{font-size:10px}.app-header nav{gap:4px}.header-link{width:44px;height:44px;justify-content:center;padding:8px}.header-link span{display:none}.header-link .icon{width:20px;height:20px}
   .topbar{padding:6px 12px;gap:4px}.breadcrumb{display:none}.topbar-state{width:100%;display:flex;justify-content:space-between;font-size:11px;gap:6px}.topbar-state .divider{display:none}.connection{font-size:11px}
-  main{padding:12px 12px 22px}.page-heading{display:flex;align-items:center;gap:10px;margin-bottom:12px}.page-heading .eyebrow,.page-heading p:not(.eyebrow){display:none}h1{font-size:20px;line-height:1.3;max-width:280px}.new-button{min-width:44px;width:44px;height:44px;margin:0;padding:9px;flex-shrink:0;font-size:0}.new-button .icon{width:21px;height:21px}
+  main{padding:12px 12px 22px}.page-heading{display:flex;align-items:center;gap:10px;margin-bottom:12px}.page-heading .eyebrow,.page-heading p:not(.eyebrow){display:none}h1{font-size:20px;line-height:1.3;max-width:280px}.new-button{min-height:48px;width:auto;height:auto;margin:0;padding:10px;flex-shrink:1;font-size:14px;white-space:normal}.new-button .icon{width:17px;height:17px}
   .document-toolbar{padding:7px;display:block}.document-toolbar>div:first-child{display:none}.document-actions{display:flex;flex-wrap:nowrap;gap:6px;width:100%}.document-actions .button{flex:1;min-height:44px;min-width:0;padding:8px 5px;font-size:13px;white-space:nowrap}.document-actions #open-preview{order:1;flex:1.5}.document-actions #download-excel{order:2}.document-actions #download-pdf{order:3}.document-actions #install-app{order:4;flex:0 0 44px}.document-actions .icon{display:none}.document-actions #install-app .icon{display:block;width:19px;height:19px}.document-status{font-size:12px;line-height:1.4;margin:6px 0 10px}
-  .document-actions .wide-label,.editor-tabs .wide-label,.sheet-switcher .wide-label{display:none}.editor-tabs .phone-label{display:inline}.sheet-switcher{gap:6px;margin-bottom:12px}.sheet-switcher label{font-size:12px}.sheet-switcher select{min-height:44px;flex:1;max-width:140px;font-size:16px}.sheet-switcher #add-sheet{width:44px;min-width:44px;height:44px;padding:9px}.sheet-switcher #add-sheet .icon{width:20px;height:20px}.sheet-switcher #delete-sheet{width:44px;height:44px;min-width:44px}
+  .document-actions .wide-label,.editor-tabs .wide-label{display:none}.editor-tabs .phone-label{display:inline}.sheet-switcher{display:grid;grid-template-columns:auto minmax(74px,1fr) auto 48px;gap:6px;margin-bottom:14px}.sheet-switcher label{font-size:14px}.sheet-switcher select{width:100%;min-width:0;min-height:48px;max-width:none;font-size:16px}.sheet-switcher #add-sheet{width:auto;min-width:0;height:auto;min-height:48px;padding:10px;font-size:14px;white-space:normal}.sheet-switcher #add-sheet .icon{width:17px;height:17px}.sheet-switcher #delete-sheet{width:48px;height:48px;min-width:48px}
   .editor-tabs{position:fixed;inset:auto 0 0;z-index:20;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin:0;padding:5px 5px calc(5px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #bdcde0;border-bottom:0;box-shadow:0 -2px 12px #173f6b12;overflow:visible}.editor-tabs button{padding:10px 2px;min-height:48px;border:0;border-radius:7px;font-size:12px;line-height:1.25;white-space:normal}.editor-tabs button[aria-selected=true]{background:#e8f1fc;border:0;color:#173f6b}.editor-tabs button:focus-visible{outline-offset:-2px}.form-column>section{scroll-margin-top:8px}
   .card-heading{padding:13px}.card-heading h2{font-size:15px}.card-heading p{font-size:12px}.card-body{padding:14px}.field input,.field select,.field textarea,.station-position-grid input{font-size:16px;min-height:44px}.field label{font-size:12px}.field-hint{font-size:12px;line-height:1.5}.button,.text-button{min-height:44px}.text-button{display:inline-flex;align-items:center}.soft-badge{font-size:11px}
   .graphics-body{padding:12px}.graphic-toolbar,#panel-graphics .graphic-instructions,.graphic-symbols{display:none}.graphic-layout{display:block}.graphic-open-editor{width:100%;margin-top:12px;margin-bottom:6px;min-height:48px;font-size:14px}.graphic-phone-guide{display:block;margin:6px 0 12px;font-size:12px;line-height:1.5;color:#4c6075}.graphic-overview-note{font-size:12px}
@@ -162,7 +162,7 @@ dialog.sketch-dialog{padding:0;background:#fff;box-shadow:none}
 .graphic-snap-option input{width:20px;height:20px;min-height:20px;flex-shrink:0;accent-color:var(--blue)}.graphic-position-controls>p{margin:0}.graphic-symbol.is-locked{cursor:default}
 .graphic-focus-dialog[data-precision=true]{--focus-dock:126px}.graphic-focus-dock>.graphic-focus-precision{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:5px}.graphic-focus-dock>.graphic-focus-precision[hidden]{display:none}.graphic-focus-precision .icon-button{width:44px;height:44px;border:1px solid var(--border);border-radius:7px;background:#f5f8fc;font-size:22px;color:var(--blue)}
 @media(max-width:700px),(max-height:500px) and (max-width:1000px){
-  .page-heading{flex-wrap:nowrap;align-items:center}.page-heading>div:first-child{flex:1;min-width:0}.page-heading h1{font-size:17px;line-height:1.35}.inventory-heading-actions{margin-left:0;gap:6px}.inventory-heading-actions #open-inventories{min-height:44px;font-size:12px;padding:8px}.inventory-heading-actions .wide-label{display:none}
+  .page-heading{display:block}.page-heading>div:first-child{min-width:0}.page-heading h1{font-size:22px;line-height:1.3;max-width:none}.inventory-heading-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);align-items:stretch;margin:12px 0 0;gap:8px}.inventory-heading-actions .button{width:100%;min-width:0;min-height:48px;font-size:14px;padding:10px;white-space:normal;line-height:1.35}
   .document-actions .document-more>summary{min-width:44px;padding:8px 6px;font-size:12px;gap:3px}.document-actions #open-preview{flex:1.25}.document-actions #install-app{flex-basis:38px}
   .document-state-row{display:block}.document-state-row .document-status{margin-bottom:0}.document-state-row .text-button{min-height:36px;padding:4px 0;font-size:12px}
   .inventory-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 16px)}.inventory-dialog .dialog-heading{padding:18px 16px 14px}.inventory-dialog-tools{padding:0 16px 14px}.inventory-dialog-tools>.button{flex:1;font-size:12px}
@@ -173,4 +173,69 @@ dialog.sketch-dialog{padding:0;background:#fff;box-shadow:none}
 @media(max-width:370px){
   .document-actions .preview-label{display:none}.document-actions .preview-short{display:inline!important}
   .document-actions .document-more>summary{font-size:0;min-width:36px}.document-actions .document-more>summary span{font-size:20px}
+}
+
+/* Colocación por estación dentro del mismo gráfico completo. */
+.section-navigation{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin:20px 0 12px}
+.section-navigation .button{display:flex;align-items:center;gap:10px;min-height:66px;min-width:0;padding:12px 14px;white-space:normal;line-height:1.4}
+.section-navigation .button>span:not([aria-hidden]){min-width:0}.section-navigation small{display:block;font-size:11px;font-weight:500}.section-navigation strong{display:block;font-size:13px;overflow-wrap:anywhere}
+.section-previous{grid-column:1;justify-content:flex-start;text-align:left}.section-next{grid-column:2;justify-content:flex-end;text-align:right}
+.station-symbols-after-save{display:flex;align-items:center;gap:9px;margin:15px 0 5px;font-size:12px;min-height:44px;color:var(--blue);cursor:pointer}
+.station-symbols-after-save input{width:20px;height:20px;flex-shrink:0;accent-color:var(--blue)}
+.station-symbol-cell{min-width:190px}.station-symbol-cell>small{display:block;margin-top:5px;color:var(--muted);font-size:11px}
+.station-row-preview{display:block;width:100%;height:62px;overflow:hidden;border:1px solid var(--border);border-radius:5px;background:#fff}
+.station-symbol-names{list-style:none;padding:0;margin:8px 0}.station-symbol-names li+li{margin-top:6px}.station-symbol-names strong{font-size:11px;color:var(--blue)}.station-symbol-names small{display:block;color:var(--muted);font-size:10px;line-height:1.5}
+.station-symbol-legend{font-size:11px;color:var(--muted);margin:6px 0 0}.station-placement-status{font-size:12px;line-height:1.5;color:var(--blue);margin:8px 0}
+.station-symbol-dialog{width:min(680px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain}
+.station-symbol-body{padding:0 25px 22px}.station-symbol-body .field select{width:100%;min-height:44px;font-size:16px}
+.station-symbol-gallery{margin:12px 0;border:1px solid var(--border);border-radius:7px;background:#f8fafc}
+.station-symbol-gallery>summary{padding:12px;font-size:13px;color:var(--blue);cursor:pointer;min-height:44px}
+.station-symbol-images{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:0 10px 10px;max-height:260px;overflow:auto}
+.station-symbol-images .graphic-palette-item{min-width:0;min-height:78px}.station-symbol-images .graphic-palette-item img{max-width:100%}
+.station-symbol-position{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.station-symbol-preview{margin:14px 0 8px;padding:10px;border:1px solid #cbd7e5;border-radius:7px;background:#fff}
+.station-symbol-preview svg{display:block;width:100%;height:85px}.station-symbol-preview figcaption{font-size:12px;color:var(--blue);margin-top:8px;line-height:1.5}
+.station-symbol-place-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:12px 0 20px}.station-symbol-place-actions .button{min-height:44px}
+.station-symbol-body>h3{margin:0 0 8px;font-size:15px;color:var(--blue)}
+.station-linked-symbol{border-top:1px solid var(--border);padding:12px 0}.station-linked-symbol>div:first-child{display:flex;align-items:center;gap:12px}
+.station-linked-symbol img{width:64px;height:34px;object-fit:contain;flex-shrink:0}.station-linked-symbol strong{display:block;font-size:13px;color:var(--blue)}
+.station-linked-symbol small{display:block;font-size:11px;color:var(--muted);line-height:1.6;margin-top:3px}.station-linked-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:6px}
+.station-linked-actions .text-button{min-height:44px;padding:6px 8px;font-size:12px}
+@media(max-width:700px),(max-height:500px) and (max-width:1000px){
+  .station-symbol-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 16px)}.station-symbol-dialog .dialog-heading{padding:18px 16px 14px}
+  .station-symbol-body{padding:0 16px 18px}.station-symbol-position{gap:8px}.station-symbol-images{grid-template-columns:repeat(3,minmax(0,1fr));max-height:230px}
+  .station-symbol-cell{grid-column:1/-1;min-width:0}.station-table .station-row-actions{gap:6px;flex-wrap:wrap}.station-row-actions .text-button{flex:1;min-width:62px;font-size:12px}
+  .station-symbol-place-actions .button{flex:1}.station-symbols-after-save{font-size:13px;line-height:1.5}.station-symbol-preview svg{height:70px}
+}
+
+/* Lectura en teléfono: títulos y etiquetas oscuros, ayudas con alto contraste.
+   Solo cambia la interfaz; las imágenes y la plantilla del documento conservan sus estilos. */
+@media(max-width:700px),(max-height:500px) and (max-width:1000px){
+  :root{--blue:#123b5d;--ink:#14293f;--muted:#234e52;font-size:16px}
+  .card-heading h2{font-size:17px;color:var(--blue)}.station-form-heading h3,.sketch-entry h3{font-size:17px;color:var(--blue)}
+  .field label,.sheet-switcher label{font-size:14px;font-weight:700;color:var(--blue)}
+  .field input,.field select,.field textarea,.field input[readonly],.field select:disabled,.field textarea:disabled{color:var(--ink)}
+  .field input::placeholder,.field textarea::placeholder{color:#4b5a6b;opacity:1}
+  .field-hint,.card-heading p,.picker-under,.description-source,.station-order-note,.station-empty,.station-empty p,.graphic-phone-guide,.graphic-overview-note,.sketch-entry p,.inventory-local-note,.document-status,.document-menu p,.help-list,.help-source{font-size:14px;line-height:1.55;color:var(--muted)}
+  .optional,.auto-label,.station-groups legend span,.input-unit>span,.locked-value span{font-size:13px;color:var(--muted)}.station-groups legend{font-size:14px;color:var(--ink)}
+  .picker-text small{font-size:13px;color:var(--muted)}.picker-text strong{font-size:16px}.soft-badge,.soft-badge.subtle{font-size:13px;color:var(--blue)}
+  .button,.text-button{font-size:14px}.document-actions .button,.document-menu button{font-size:14px}.document-state-row .text-button{font-size:14px}
+  .inventory-heading-actions #new-inventory,.sheet-switcher #add-sheet{color:#104d52;border-color:#50838a;background:#f2faf9}
+  .button-label{display:inline;font:inherit;color:inherit}.inventory-heading-actions .button-label{min-width:0}
+  .editor-tabs button{font-size:13px;color:var(--blue)}.editor-tabs button[aria-selected=true]{color:var(--blue);font-weight:700}
+  .topbar-state,.connection{font-size:12px}.brand small{font-size:12px}.page-footer,.form-actions>span{font-size:13px;color:var(--muted)}
+  .result-meta,.result-code,.result-description,.result-length,.catalog-pagination,.catalog-bottom{font-size:14px;color:var(--ink)}.result-code small,.result-description small,.result-length small{font-size:13px;color:var(--muted)}
+  .dialog-heading p:not(.eyebrow),.message,.message.notice{font-size:14px}.help-list strong{font-size:15px;color:var(--blue)}
+  .saved-inventory p,.review-sheet p,.review-status,.review-issue{font-size:14px}.saved-inventory small,.review-sheet small{font-size:13px;color:var(--muted)}.saved-inventory-actions .text-button{font-size:14px}
+  .station-table td{font-size:16px;color:var(--ink)}.station-table td::before{font-size:14px;font-weight:600;color:var(--blue)}.station-table small,.station-table tbody th small{font-size:13px;color:var(--muted)}
+  .station-symbol-names strong,.station-linked-symbol strong,.station-linked-actions .text-button,.station-symbol-preview figcaption,.station-placement-status,.station-symbol-gallery>summary{font-size:14px;color:var(--blue)}
+  .station-symbol-names small,.station-linked-symbol small,.station-symbol-cell>small,.station-symbol-legend{font-size:13px;color:var(--muted)}
+  .section-navigation small{font-size:13px}.section-navigation strong{font-size:14px}.graphic-focus-symbols button{font-size:13px}.graphic-focus-selection{font-size:14px}.graphic-focus-dock p{font-size:13px;line-height:18px;color:var(--ink)}
+  .station-row-actions .text-button{font-size:14px}
+}
+@media(max-width:360px){
+  .editor-tabs button{font-size:12px}
+  .sheet-switcher{grid-template-columns:auto minmax(0,1fr) 48px;gap:8px}
+  .sheet-switcher label{grid-column:1;grid-row:1}.sheet-switcher select{grid-column:2;grid-row:1}
+  .sheet-switcher #add-sheet{grid-column:1/-1;grid-row:2}.sheet-switcher #delete-sheet{grid-column:3;grid-row:1}
 }

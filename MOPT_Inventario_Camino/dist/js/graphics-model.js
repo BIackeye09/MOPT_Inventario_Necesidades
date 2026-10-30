@@ -6,6 +6,13 @@ export {SYMBOLS};
 export const GRAPH_FRAME=Object.freeze({left:91.165,top:312.646,width:90.077,height:440.922});
 // Bordes de la calzada medidos en la plantilla, usados solo como guías opcionales.
 export const GRAPH_ROAD_BOUNDS=Object.freeze({left:20.989,right:68.653});
+// Columnas del dibujo oficial, medidas en el PDF. No se modifica el fondo.
+export const GRAPH_ZONES=Object.freeze({
+  sidewalk:Object.freeze({label:'Acera',left:Object.freeze([0,13.998]),right:Object.freeze([75.159,90.077])}),
+  ditch:Object.freeze({label:'Cuneta / caño',left:Object.freeze([13.998,20.989]),right:Object.freeze([68.653,75.159])}),
+  road:Object.freeze({label:'Carretera',left:Object.freeze([20.989,44.821]),right:Object.freeze([44.821,68.653]),both:Object.freeze([20.989,68.653])})
+});
+export const GRAPH_SIDES=Object.freeze({left:'Izquierda',right:'Derecha',both:'Ambos carriles'});
 export const GRAPH_ROW_BOUNDS=Object.freeze([312.646,330.341,348.035,365.729,383.424,401.118,418.813,436.507,
   454.202,471.896,489.590,507.285,524.979,542.674,560.368,578.062,595.757,613.451,
   631.146,645.863,661.250,676.636,692.023,707.409,722.796,738.182,753.568]);
@@ -92,6 +99,45 @@ export function createGraphic(symbolId,{frameHeight=GRAPH_FRAME.height,x=.5,y=.5
     x:x-width/GRAPH_FRAME.width/2,y:y-height/frameHeight/2,
     width:width/GRAPH_FRAME.width,height:height/frameHeight,rotation:0},{},frameHeight);
 }
+export function restoreStationPlacement(input,stations){
+  if(input===undefined)return undefined;
+  if(!input||typeof input!=='object'||!Object.hasOwn(GRAPH_ZONES,input.area)||
+    !Object.hasOwn(GRAPH_ZONES[input.area],input.side)||!Array.isArray(GRAPH_ZONES[input.area][input.side])||
+    typeof input.stationId!=='string'||!input.stationId||input.stationId.length>120||!stations.some(station=>station.id===input.stationId)||
+    (input.manual!==undefined&&typeof input.manual!=='boolean'))throw new Error('La ubicación de un símbolo por estación no es válida.');
+  return {stationId:input.stationId,area:input.area,side:input.side,...(input.manual?{manual:true}:{})};
+}
+export function stationGraphicRect(symbolId,stations,placement){
+  const symbol=symbolById(symbolId);if(!symbol)throw new Error('El símbolo no pertenece a la plantilla.');
+  const target=restoreStationPlacement(placement,stations);if(!target)throw new Error('Elegí una ubicación para el símbolo.');
+  const ordered=sortStations(stations),row=stationFrame(ordered,target.stationId);
+  const [left,right]=GRAPH_ZONES[target.area][target.side],margin=.4;
+  const availableWidth=right-left-2*margin,availableHeight=row.height-2*margin;
+  let width=availableWidth,height=width*symbol.height/symbol.width;
+  // Izquierda/derecha conservan la forma dentro de su casilla. «Ambos» utiliza
+  // todo el ancho de los dos carriles con UNA imagen, adaptando solo el alto.
+  if(height>availableHeight){if(target.side!=='both')width*=availableHeight/height;height=availableHeight;}
+  const rect={x:(left+(right-left-width)/2)/GRAPH_FRAME.width,
+    y:(row.top+(row.height-height)/2)/GRAPH_FRAME.height,
+    width:width/GRAPH_FRAME.width,height:height/GRAPH_FRAME.height};
+  return Object.fromEntries(Object.entries(rect).map(([key,value])=>[key,round(value)]));
+}
+export function createStationGraphic(symbolId,stations,placement){
+  const target=restoreStationPlacement(placement,stations);
+  return {id:createId(),symbolId,...stationGraphicRect(symbolId,stations,target),rotation:0,placement:target};
+}
+export function reflowStationSymbols(sheet,previousStations=sheet.stations||[]){
+  if(!sheet.graphics)return;
+  const ordered=sortStations(sheet.stations||[]);
+  sheet.graphics.free=sheet.graphics.free.filter(item=>!item.placement||ordered.some(station=>station.id===item.placement.stationId)).map(item=>{
+    if(!item.placement)return item;
+    if(!item.placement.manual)return {...item,...stationGraphicRect(item.symbolId,ordered,item.placement),rotation:0};
+    const before=stationFrame(previousStations,item.placement.stationId),after=stationFrame(ordered,item.placement.stationId);
+    if(!before||!after)return item;
+    const delta=after.top+after.height/2-before.top-before.height/2;
+    return Math.abs(delta)<1e-7?item:constrainGraphic(item,{y:item.y+delta/GRAPH_FRAME.height});
+  });
+}
 // La versión final solo guarda el dibujo de la carretera completa. La lectura
 // antigua está aislada aquí; el editor y las descargas no eligen entre casos.
 export function restoreGraphics(input,stations=[]) {
@@ -108,7 +154,8 @@ export function restoreGraphics(input,stations=[]) {
       const box=graphicBounds({...item,rotation},heightFor(item));
       if(box.x<-.0000001||box.y<-.0000001||box.x+box.width>1.0000001||box.y+box.height>1.0000001)throw new Error('Un símbolo queda fuera de su recuadro.');
       if(item.locked!==undefined&&typeof item.locked!=='boolean')throw new Error('El bloqueo de un símbolo no es válido.');
-      return {id:item.id,symbolId:item.symbolId,x:item.x,y:item.y,width:item.width,height:item.height,rotation,...(item.locked?{locked:true}:{})};
+      const placement=restoreStationPlacement(item.placement,stations);
+      return {id:item.id,symbolId:item.symbolId,x:item.x,y:item.y,width:item.width,height:item.height,rotation,...(item.locked?{locked:true}:{}),...(placement?{placement}:{})};
     });
     if(new Set(result.map(i=>i.id)).size!==result.length)throw new Error('Hay símbolos con identificadores repetidos.');
     return result;
@@ -146,10 +193,35 @@ export function snapGraphic(item,stations=[],tolerance=3) {
     y:item.y+nearest([y,y+height],horizontal)/GRAPH_FRAME.height});
 }
 export function graphicPlacements(sheet={}) {
-  return restoreGraphics(sheet.graphics,sheet.stations||[]).free.map(item=>({
-    id:item.id,symbolId:item.symbolId,x:item.x*GRAPH_FRAME.width,y:item.y*GRAPH_FRAME.height,
-    width:item.width*GRAPH_FRAME.width,height:item.height*GRAPH_FRAME.height,rotation:item.rotation
-  }));
+  return restoreGraphics(sheet.graphics,sheet.stations||[]).free.map(item=>{
+    if(item.placement&&!item.placement.manual)item={...item,...stationGraphicRect(item.symbolId,sheet.stations,item.placement),rotation:0};
+    return {id:item.id,symbolId:item.symbolId,x:item.x*GRAPH_FRAME.width,y:item.y*GRAPH_FRAME.height,
+      width:item.width*GRAPH_FRAME.width,height:item.height*GRAPH_FRAME.height,rotation:item.rotation};
+  });
+}
+// La estación refleja el dibujo real, incluidos los símbolos libres o girados
+// que cruzan su renglón. Leer esta vista nunca cambia vínculos ni coordenadas.
+export function stationGraphicEntries(sheet,stationId) {
+  const row=stationFrame(sortStations(sheet.stations||[]),stationId);if(!row)return [];
+  const items=new Map((sheet.graphics?.free||[]).map(item=>[item.id,item]));
+  return graphicPlacements(sheet).map(graphic=>{
+    const item=items.get(graphic.id),bounds=exportGraphic(graphic),linked=item.placement?.stationId===stationId;
+    const visible=bounds.y<row.top+row.height-1e-6&&bounds.y+bounds.height>row.top+1e-6;
+    return {item,graphic,bounds,linked,visible};
+  }).filter(entry=>entry.linked||entry.visible);
+}
+// Un ajuste manual no habilita otro agregado del mismo símbolo vinculado.
+// También se reconoce un dibujo libre que ya ocupa la posición elegida.
+export function findStationGraphicDuplicate(sheet,symbolId,placement,exceptId=null) {
+  const rect=stationGraphicRect(symbolId,sheet.stations,placement),candidate={x:rect.x*GRAPH_FRAME.width,y:rect.y*GRAPH_FRAME.height,width:rect.width*GRAPH_FRAME.width,height:rect.height*GRAPH_FRAME.height};
+  return stationGraphicEntries(sheet,placement.stationId).find(({item,bounds})=>{
+    if(item.id===exceptId||item.symbolId!==symbolId)return false;
+    const target=item.placement;
+    if(target?.stationId===placement.stationId&&target.area===placement.area&&target.side===placement.side)return true;
+    const width=Math.max(0,Math.min(bounds.x+bounds.width,candidate.x+candidate.width)-Math.max(bounds.x,candidate.x)),
+      height=Math.max(0,Math.min(bounds.y+bounds.height,candidate.y+candidate.height)-Math.max(bounds.y,candidate.y));
+    return width*height/Math.min(bounds.width*bounds.height,candidate.width*candidate.height)>.8;
+  })?.item;
 }
 // El archivo recibe el contorno ya girado, sin depender de cómo Excel interprete
 // la rotación OfficeArt. Cada figura sigue siendo una imagen nativa independiente.

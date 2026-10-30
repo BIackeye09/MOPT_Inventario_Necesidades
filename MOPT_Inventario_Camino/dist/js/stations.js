@@ -69,7 +69,7 @@ export function metreNumberFormat(value) {
 }
 export function validateStation(record) {
   const errors = [];
-  if (!validStationInput(record.station)) errors.push({field:'station',message:'Usá un número, una sola coma o punto y de 1 a 3 decimales. Ejemplos: 2,870; 2.864; 0,0.'});
+  if (!validStationInput(record.station)) errors.push({field:'station',message:'Usá un número, una sola coma o punto y de 1 a 3 decimales. Ejemplos: 0,000; 0.100; 1,000.'});
   for (const [field,label] of [['diameter','diámetro'],['culvertLength','longitud de la alcantarilla']]) {
     if (text(record[field]) && parseMetres(record[field]) === null) errors.push({field,message:`El ${label === 'diámetro' ? 'diámetro' : 'valor de longitud de la alcantarilla'} debe ser un número de metros mayor o igual que cero.`});
   }

@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {setupGraphics} from '../dist/js/graphics-ui.js';
 import {createInventory} from '../dist/js/model.js';
-import {GRAPH_FRAME,graphicPlacements} from '../dist/js/graphics-model.js';
+import {GRAPH_FRAME,graphicPlacements,createStationGraphic} from '../dist/js/graphics-model.js';
 function screen({phone=false}={}) {
   const inventory=createInventory(),nodes=new Map();let ui,commits=0;
   inventory.sheets[0].stations=['0,0','1,25','4,9'].map((station,i)=>({id:`s${i}`,station,observations:''}));
@@ -45,6 +45,19 @@ function focusEditor() {
     key(key){s.node('graphic-focus-dialog').events.keydown({key,shiftKey:false,preventDefault(){},target:{closest:()=>s.node('graphic-focus-canvas')}});},
     touch(type,pointerId,x,y,id){s.pointer(type,{focus:true,pointerType:'touch',pointerId,x,y,id});}};
 }
+test('ajustar una figura vinculada conserva su estación y Deshacer recupera la colocación automática',()=>{
+  const s=screen(),sheet=s.inventory.sheets[0],item=createStationGraphic('bacheo',sheet.stations,{stationId:'s1',area:'road',side:'left'});
+  sheet.graphics.free=[item];s.ui.showSymbol(item.id);s.click('graphic-focus-symbol');
+  s.click('graphic-focus-lock');assert.equal(item.placement.manual,undefined);s.click('graphic-focus-lock');
+  const before=structuredClone(item);s.click('graphic-focus-move-right');
+  assert.equal(item.placement.stationId,'s1');assert.equal(item.placement.manual,true);assert.equal(item.width,before.width);assert.equal(item.height,before.height);
+  s.click('graphic-focus-undo');assert.deepEqual(sheet.graphics.free[0],before);
+});
+test('una modificación de estaciones puede invalidar el historial gráfico para evitar restaurar referencias antiguas',()=>{
+  const s=focusEditor();s.click('graphic-focus-symbol');s.click('graphic-focus-move-right');assert.equal(s.node('graphic-focus-undo').disabled,false);
+  s.ui.resetHistory();s.ui.refresh();const before=structuredClone(s.sheet.graphics);assert.equal(s.node('graphic-focus-undo').disabled,true);
+  s.click('graphic-focus-undo');assert.deepEqual(s.sheet.graphics,before);
+});
 test('el bloqueo individual protege arrastre, pellizco, teclado y herramientas hasta desbloquear la figura',()=>{
   const s=focusEditor();s.click('graphic-focus-symbol');s.click('graphic-focus-lock');
   assert.equal(s.item.locked,true);const before=structuredClone(s.sheet.graphics),view=s.node('graphic-focus-canvas').getAttribute('viewBox');

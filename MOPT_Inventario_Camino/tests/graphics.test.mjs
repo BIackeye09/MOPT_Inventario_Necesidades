@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFile,readdir} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {createInventory,addSheet,toBackup,fromBackup} from '../dist/js/model.js';
-import {SYMBOLS,symbolUrl,createGraphic,graphicPlacements,loadGraphicAssets,GRAPH_FRAME,constrainGraphic,stretchGraphic,graphicBounds,stationFrame,graphicAssetKey,exportGraphic,fitGraphicView,zoomGraphicView,constrainGraphicView} from '../dist/js/graphics-model.js';
+import {SYMBOLS,symbolUrl,createGraphic,graphicPlacements,loadGraphicAssets,GRAPH_FRAME,GRAPH_ZONES,createStationGraphic,reflowStationSymbols,restoreGraphics,constrainGraphic,stretchGraphic,graphicBounds,stationFrame,graphicAssetKey,exportGraphic,fitGraphicView,zoomGraphicView,constrainGraphicView,stationGraphicEntries,findStationGraphicDuplicate} from '../dist/js/graphics-model.js';
 import {rotateExamplePng} from '../scripts/rotar_simbolos.mjs';
 import {documentValues,makeExcel,makePdf,documentFilename} from '../dist/js/documents.js';
 import {readContainer,readRecords} from '../dist/js/excel-template.js';
@@ -15,6 +15,93 @@ const pdf=await readFile(new URL('../dist/templates/DPA-301-original.pdf',import
 const catalog=JSON.parse(await readFile(new URL('../dist/data/caminos.json',import.meta.url),'utf8'));
 const station=(id,km)=>({id,station:km,diameter:'',culvertLength:'',headwallNumber:'',headwallType:'',observations:''});
 const assetReader=async url=>Buffer.from(await (await fetch(url)).arrayBuffer());
+test('la vista por renglón incluye dibujos girados que cruzan dos estaciones sin alterar sus datos',()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=[station('a','0,0'),station('b','1,0'),station('c','2,0')];
+  const row=stationFrame(sheet.stations,'b'),free=constrainGraphic(createGraphic('bacheo',{y:(row.top+row.height)/GRAPH_FRAME.height}),{width:.1,height:.01,rotation:45});
+  const linked=createStationGraphic('tomas',sheet.stations,{stationId:'b',area:'road',side:'left'});linked.placement.manual=true;linked.y=.4;sheet.graphics.free=[free,linked];
+  const before=structuredClone(sheet);
+  assert.equal(stationGraphicEntries(sheet,'a').filter(entry=>entry.item.id===free.id&&entry.visible).length,1);
+  const entries=stationGraphicEntries(sheet,'b');assert.equal(entries.length,2);assert.equal(entries.find(entry=>entry.item.id===free.id).graphic.rotation,45);
+  assert.equal(entries.find(entry=>entry.item.id===linked.id).visible,false);assert.equal(entries.find(entry=>entry.item.id===linked.id).linked,true);
+  assert.equal(stationGraphicEntries(sheet,'c').length,0);assert.equal(stationGraphicEntries(sheet,'missing').length,0);assert.deepEqual(sheet,before);
+});
+test('el bloqueo de duplicados reconoce ajustes manuales y dibujos libres, conservando otras ubicaciones',()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=[station('a','0,0'),station('b','1,0')];const target={stationId:'a',area:'road',side:'left'};
+  const linked=createStationGraphic('bacheo',sheet.stations,target);linked.placement.manual=true;sheet.graphics.free=[linked];
+  assert.equal(findStationGraphicDuplicate(sheet,'bacheo',target).id,linked.id);
+  assert.equal(findStationGraphicDuplicate(sheet,'bacheo',target,linked.id),undefined);
+  assert.equal(findStationGraphicDuplicate(sheet,'bacheo',{...target,side:'right'}),undefined);
+  assert.equal(findStationGraphicDuplicate(sheet,'bacheo',{...target,stationId:'b'}),undefined);
+  const free=constrainGraphic(linked,{rotation:180});delete free.placement;sheet.graphics.free=[free];
+  assert.equal(findStationGraphicDuplicate(sheet,'bacheo',target).id,free.id);
+  assert.equal(findStationGraphicDuplicate(sheet,'tomas',target),undefined);
+  assert.deepEqual(fromBackup(toBackup(inv),catalog).sheets[0].graphics,sheet.graphics);
+});
+test('los 18 símbolos caben en las siete ubicaciones y en los 26 renglones de la plantilla',()=>{
+  const stations=Array.from({length:26},(_,i)=>station(`row-${i}`,`${i},0`));
+  assert.deepEqual(GRAPH_ZONES.sidewalk.left,[0,13.998]);assert.deepEqual(GRAPH_ZONES.ditch.right,[68.653,75.159]);assert.deepEqual(GRAPH_ZONES.road.both,[20.989,68.653]);
+  for(const symbol of SYMBOLS)for(const [area,zone]of Object.entries(GRAPH_ZONES))for(const side of ['left','right','both'].filter(side=>zone[side]))for(const record of stations){
+    const item=createStationGraphic(symbol.id,stations,{stationId:record.id,area,side}),row=stationFrame(stations,record.id),[left,right]=zone[side];
+    assert.ok(item.x*GRAPH_FRAME.width>=left+.39999);assert.ok((item.x+item.width)*GRAPH_FRAME.width<=right-.39999);
+    assert.ok(item.y*GRAPH_FRAME.height>=row.top+.39999);assert.ok((item.y+item.height)*GRAPH_FRAME.height<=row.top+row.height-.39999);
+    assert.ok(item.width>0&&item.height>0);assert.equal(item.rotation,0);
+    if(side==='both')assert.ok(Math.abs(item.width*GRAPH_FRAME.width-(right-left-.8))<.00001);
+    assert.doesNotThrow(()=>restoreGraphics({free:[item]},stations));
+  }
+});
+test('ordenar estaciones mueve sus símbolos automáticos y conserva sus datos, ID y bloqueo',()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=[station('later','2,870')];
+  const auto={...createStationGraphic('alcantarilla-existente',sheet.stations,{stationId:'later',area:'road',side:'both'}),locked:true};
+  const free=createGraphic('poste-electrico'),previous=sheet.stations;sheet.graphics.free=[auto,free];
+  sheet.stations=[station('earlier','2,864'),...previous];reflowStationSymbols(sheet,previous);
+  const moved=sheet.graphics.free[0],expected=createStationGraphic(auto.symbolId,sheet.stations,auto.placement);
+  assert.equal(moved.id,auto.id);assert.equal(moved.locked,true);assert.equal(moved.y,expected.y);assert.ok(moved.y<auto.y);
+  assert.deepEqual(sheet.graphics.free[1],free);assert.deepEqual(fromBackup(toBackup(inv),catalog).sheets[0].graphics,sheet.graphics);
+});
+test('un ajuste manual sigue la estación por desplazamiento y no pierde tamaño ni giro al reordenar',()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=[station('later','2,870')];
+  const auto=createStationGraphic('alcantarilla-existente',sheet.stations,{stationId:'later',area:'road',side:'both'});
+  const manual=constrainGraphic({...auto,placement:{...auto.placement,manual:true}},{rotation:37,width:.2,height:.025,y:.9});
+  sheet.graphics.free=[manual];const previous=sheet.stations,before=stationFrame(previous,'later');sheet.stations=[station('earlier','2,864'),...previous];
+  reflowStationSymbols(sheet,previous);const moved=sheet.graphics.free[0],after=stationFrame(sheet.stations,'later');
+  assert.equal(moved.width,manual.width);assert.equal(moved.height,manual.height);assert.equal(moved.rotation,manual.rotation);assert.equal(moved.x,manual.x);
+  assert.ok(Math.abs((moved.y-manual.y)*GRAPH_FRAME.height-(after.top+after.height/2-before.top-before.height/2))<.00001);
+  assert.deepEqual(fromBackup(toBackup(inv),catalog).sheets[0].graphics,sheet.graphics);
+});
+test('quitar una estación retira sus figuras vinculadas y mantiene los dibujos libres y demás estaciones',()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=[station('a','1,0'),station('b','2,0')];
+  const first=createStationGraphic('bacheo',sheet.stations,{stationId:'a',area:'sidewalk',side:'left'}),second=createStationGraphic('tomas',sheet.stations,{stationId:'b',area:'ditch',side:'right'}),free=createGraphic('bacheo');
+  sheet.graphics.free=[first,second,free];const previous=sheet.stations;sheet.stations=[previous[1]];reflowStationSymbols(sheet,previous);
+  assert.deepEqual(sheet.graphics.free.map(item=>item.id),[second.id,free.id]);assert.deepEqual(sheet.graphics.free[1],free);
+  assert.equal(sheet.graphics.free[0].y,createStationGraphic('tomas',sheet.stations,second.placement).y);
+});
+test('las copias validan ubicación, lado y estación de cada vínculo sin aceptar referencias dañadas',()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=[station('a','0,0')];
+  const item=createStationGraphic('bacheo',sheet.stations,{stationId:'a',area:'road',side:'both'});
+  for(const patch of [{stationId:'missing'},{area:'fuera'},{area:'sidewalk',side:'both'},{area:'ditch',side:'both'},{side:'label'},{manual:'sí'}]){
+    sheet.graphics.free=[{...item,placement:{...item.placement,...patch}}];assert.throws(()=>fromBackup(toBackup(inv),catalog),/ubicación/);
+  }
+});
+test('la exportación de siete posiciones usa las mismas figuras y coordenadas en PDF y Excel',async()=>{
+  const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=Array.from({length:7},(_,i)=>station(`row-${i}`,`${i},0`));
+  const choices=Object.entries(GRAPH_ZONES).flatMap(([area,zone])=>['left','right','both'].filter(side=>zone[side]).map(side=>({area,side})));
+  sheet.graphics.free=choices.map((choice,i)=>createStationGraphic('alcantarilla-existente',sheet.stations,{...choice,stationId:sheet.stations[i].id}));
+  const values=documentValues(inv),assets=await loadGraphicAssets(values.graphics,assetReader),excel=makeExcel(template,values,assets);
+  const drawings=drawingStreams(excel),shapes=officeArtRecords(drawings.sheets[0]).filter(record=>record.type===0xf010);
+  assert.ok(shapes.length>=7);assert.equal(values.graphics.length,7);
+  const anchors=shapes.slice(-7),columns=[[3,3],[8,8],[4,4],[7,7],[5,5],[6,6],[5,6]];
+  for(const [index,anchor]of anchors.entries()){
+    assert.equal(drawings.sheets[0].readUInt16LE(anchor.data+2),columns[index][0]);
+    assert.equal(drawings.sheets[0].readUInt16LE(anchor.data+10),columns[index][1]);
+    assert.equal(drawings.sheets[0].readUInt16LE(anchor.data+6),48-index);
+    assert.equal(drawings.sheets[0].readUInt16LE(anchor.data+14),48-index);
+  }
+  const result=await PDFDocument.load(await makePdf(pdf,values,assets));assert.equal(result.getPageCount(),2);
+  const content=result.getPages()[0].node.Contents();assert.ok(content);
+  for(const [index,value]of values.graphics.entries()){
+    const item=sheet.graphics.free[index];assert.ok(Math.abs(value.x-item.x*GRAPH_FRAME.width)<1e-7);assert.ok(Math.abs(value.y-item.y*GRAPH_FRAME.height)<1e-7);
+  }
+});
 test('un borrador anterior siempre recupera el dibujo libre aunque tuviera seleccionado el editor retirado',()=>{
   const inv=createInventory(),sheet=inv.sheets[0];sheet.stations=[station('old','2,870')];
   const drawing=constrainGraphic(createGraphic('bacheo'),{rotation:37.5,width:.2,height:.03});
