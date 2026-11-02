@@ -1,5 +1,5 @@
 INVENTARIO DE NECESIDADES DEL CAMINO · MOPT
-Versión 1.3.1 · 30/10/2026
+Versión 1.3.2 · 02/11/2026
 
 PARA INICIAR
 1. Descomprimí toda la carpeta.
@@ -10,6 +10,8 @@ También podés usar Live Server sobre dist/index.html. La instalación como
 app requiere HTTPS o localhost. El puerto 8081 evita el conflicto con el reporte.
 
 VERSIÓN FINAL
+- Nuevo inventario usa un botón rojo con letras blancas, en el encabezado
+  y en Mis inventarios, tanto en teléfono como en computadora.
 - En teléfono, las letras son más grandes y oscuras: etiquetas azul marino,
   ayudas verde petróleo y campos legibles. Nuevo inventario y Agregar hoja
   muestran sus nombres completos. En pantallas pequeñas se acomodan en filas.
@@ -84,7 +86,7 @@ ACTUALIZAR TU WEB
 Reemplazá dist/ dentro de la carpeta publicable que ya usa tu hosting,
 conservando las rutas. No subás el ZIP como página web.
 Si tu repositorio tiene MOPT_Inventario_Camino/dist, reemplazá esa carpeta.
-Recargá con conexión hasta ver 1.3.1 al pie de la app.
+Recargá con conexión hasta ver 1.3.2 al pie de la app.
 El proyecto tiene 99 archivos y dist/ tiene 52. Ver SUBIR_A_GITHUB.md.
 
 EJEMPLOS

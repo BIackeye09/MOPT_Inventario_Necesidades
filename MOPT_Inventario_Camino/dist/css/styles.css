@@ -220,7 +220,7 @@ dialog.sketch-dialog{padding:0;background:#fff;box-shadow:none}
   .optional,.auto-label,.station-groups legend span,.input-unit>span,.locked-value span{font-size:13px;color:var(--muted)}.station-groups legend{font-size:14px;color:var(--ink)}
   .picker-text small{font-size:13px;color:var(--muted)}.picker-text strong{font-size:16px}.soft-badge,.soft-badge.subtle{font-size:13px;color:var(--blue)}
   .button,.text-button{font-size:14px}.document-actions .button,.document-menu button{font-size:14px}.document-state-row .text-button{font-size:14px}
-  .inventory-heading-actions #new-inventory,.sheet-switcher #add-sheet{color:#104d52;border-color:#50838a;background:#f2faf9}
+  .sheet-switcher #add-sheet{color:#104d52;border-color:#50838a;background:#f2faf9}
   .button-label{display:inline;font:inherit;color:inherit}.inventory-heading-actions .button-label{min-width:0}
   .editor-tabs button{font-size:13px;color:var(--blue)}.editor-tabs button[aria-selected=true]{color:var(--blue);font-weight:700}
   .topbar-state,.connection{font-size:12px}.brand small{font-size:12px}.page-footer,.form-actions>span{font-size:13px;color:var(--muted)}
@@ -239,3 +239,9 @@ dialog.sketch-dialog{padding:0;background:#fff;box-shadow:none}
   .sheet-switcher label{grid-column:1;grid-row:1}.sheet-switcher select{grid-column:2;grid-row:1}
   .sheet-switcher #add-sheet{grid-column:1/-1;grid-row:2}.sheet-switcher #delete-sheet{grid-column:3;grid-row:1}
 }
+
+/* Crear un inventario usa el mismo rojo y texto blanco en ambas entradas.
+   El contraste y el nombre completo se conservan también en teléfono. */
+.inventory-heading-actions #new-inventory,#inventory-create{color:#fff;background:#b42318;border-color:#b42318}
+.inventory-heading-actions #new-inventory:hover,#inventory-create:hover{background:#912018;border-color:#912018}
+.inventory-heading-actions #new-inventory:active,#inventory-create:active{background:#781a14;border-color:#781a14}

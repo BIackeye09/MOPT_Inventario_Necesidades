@@ -1,6 +1,6 @@
 # Inventario de Necesidades del Camino · MOPT
 
-Aplicación DPA-301, versión 1.3.1 · 30 de octubre de 2026.
+Aplicación DPA-301, versión 1.3.2 · 2 de noviembre de 2026.
 
 ## Iniciar
 
@@ -10,7 +10,7 @@ Aplicación DPA-301, versión 1.3.1 · 30 de octubre de 2026.
 
 ## Completar el inventario
 
-En teléfono, los títulos y etiquetas usan azul marino, el contenido un tono oscuro y las ayudas verde petróleo. Las etiquetas y ayudas tienen 14 px y los campos 16 px para facilitar la lectura. **Nuevo inventario** y **Agregar hoja** muestran sus nombres completos; en pantallas pequeñas, Agregar hoja ocupa una fila propia. La presentación de Excel y PDF conserva los estilos de la plantilla.
+En teléfono, los títulos y etiquetas usan azul marino, el contenido un tono oscuro y las ayudas verde petróleo. Las etiquetas y ayudas tienen 14 px y los campos 16 px para facilitar la lectura. **Nuevo inventario** aparece en rojo con letras blancas, tanto en el encabezado como en Mis inventarios. **Nuevo inventario** y **Agregar hoja** muestran sus nombres completos; en pantallas pequeñas, Agregar hoja ocupa una fila propia. La presentación de Excel y PDF conserva los estilos de la plantilla.
 
 1. Elegí el camino del catálogo o ingresalo manualmente y completá su encabezado.
 2. Agregá las hojas que necesités; cada una tiene sus estaciones, su dibujo y su croquis.
@@ -106,7 +106,7 @@ Los borradores anteriores se recuperan automáticamente. Se conserva el dibujo d
 
 Los enteros antiguos se recuperan con `,0`. Las estaciones repetidas que ya existían se señalan para corregirlas sin eliminar registros automáticamente.
 
-La caché de la PWA usa la versión **1.3.1**. Después de actualizar `dist/`, recargá con conexión o cerrá y volvé a abrir la app hasta ver esa versión al pie. Cambiar el navegador, dominio o puerto crea otro espacio de guardado; abrí una copia editable para trasladar el trabajo.
+La caché de la PWA usa la versión **1.3.2**. Después de actualizar `dist/`, recargá con conexión o cerrá y volvé a abrir la app hasta ver esa versión al pie. Cambiar el navegador, dominio o puerto crea otro espacio de guardado; abrí una copia editable para trasladar el trabajo.
 
 ## Revisar y descargar el inventario completo
 
