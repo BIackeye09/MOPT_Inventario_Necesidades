@@ -7,7 +7,7 @@ import { parseKm } from './model.js';
 import {TABLE_FONT, stationRows} from './stations.js';
 import {GRAPH_FRAME,GRAPH_ROW_BOUNDS,graphicPlacements,exportGraphic,loadGraphicAssets} from './graphics-model.js';
 import {SKETCH_FRAME,SKETCH_KEY,restoreSketch,loadSketchAsset} from './sketch-model.js';
-import {backObservationLines} from './back-observations.js';
+import {backObservationLines,backDateLines} from './back-observations.js';
 
 export function documentValues(inventory) {
   const road = inventory.road || {};
@@ -24,7 +24,8 @@ export function documentValues(inventory) {
     cantonCode: text(road.cantonCode), cantonName: text(road.cantonName),
     stations: stationRows(activeSheet),
     graphics:graphicPlacements(activeSheet),sketch:restoreSketch(activeSheet?.sketch),
-    backObservations:activeSheet?.backObservations||'',backObservationLines:backObservationLines(activeSheet?.backObservations)
+    backObservations:activeSheet?.backObservations||'',backObservationLines:backObservationLines(activeSheet?.backObservations),
+    backDate:activeSheet?.backDate??''
   };
 }
 
@@ -130,7 +131,7 @@ export async function makePdf(template, values, assets={}) {
     back.drawImage(picture,{x:SKETCH_FRAME.left,y:back.getHeight()-SKETCH_FRAME.top-SKETCH_FRAME.height,width:SKETCH_FRAME.width,height:SKETCH_FRAME.height});
   }
   const back=pdf.getPages()[1];
-  for(const item of backObservationLines(values.backObservations)) {
+  for(const item of [...backObservationLines(values.backObservations),...backDateLines(values.backDate)]) {
     back.drawText(item.text,{x:item.x,y:back.getHeight()-item.top,size:item.size,font:fonts.regular,color:rgb(0,0,0)});
   }
   return pdf.save();

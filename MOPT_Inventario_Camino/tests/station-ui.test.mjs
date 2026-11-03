@@ -59,10 +59,33 @@ test('al insertar una estación menor sus símbolos siguen el orden numérico y 
   const row=stationFrame(sheet.stations,record.id);assert.ok(sheet.graphics.free[0].y*GRAPH_FRAME.height>=row.top);
   await s.click({deleteStation:record.id});assert.deepEqual(sheet.graphics.free,[free]);
 });
-test('elegir símbolos después de guardar es opcional y la ventana se cierra al cambiar de hoja',async()=>{
-  const s=screen();s.node('station-symbols-after-save').checked=true;s.node('station-km').value='0,0';await s.submit();
+test('cada estación nueva abre sus símbolos automáticamente y se puede cerrar sin colocar figuras',async()=>{
+  const s=screen();s.node('station-km').value='2,0';await s.submit();
   assert.equal(s.node('station-symbol-dialog').open,true);
+  assert.match(s.node('station-symbols-title').textContent,/2 \+ 000/);
+  s.node('station-symbol-dialog').close();
+  assert.equal(s.inventory.sheets[0].stations.length,1);assert.equal(s.inventory.sheets[0].graphics.free.length,0);
+  s.node('station-km').value='1,0';await s.submit();
+  assert.equal(s.node('station-symbol-dialog').open,true);assert.match(s.node('station-symbols-title').textContent,/1 \+ 000/);
+  s.node('station-symbol-choice').value='bacheo';s.node('station-symbol-place').events.click();
+  const active=s.inventory.sheets[0],record=active.stations.find(r=>r.station==='1,0');
+  assert.equal(active.graphics.free[0].placement.stationId,record.id);
   s.inventory.activeSheetId=s.inventory.sheets[1].id;s.ui.refresh();assert.equal(s.node('station-symbol-dialog').open,false);
+});
+test('una estación inválida o repetida mantiene el formulario sin abrir los símbolos',async()=>{
+  const s=screen();s.node('station-km').value='0,';await s.submit();
+  assert.ok(!s.node('station-symbol-dialog').open);assert.equal(s.inventory.sheets[0].stations.length,0);
+  s.node('station-km').value='0,0';await s.submit();s.node('station-symbol-dialog').close();
+  s.node('station-km').value='00.000';await s.submit();
+  assert.equal(s.node('station-symbol-dialog').open,false);assert.equal(s.inventory.sheets[0].stations.length,1);
+  assert.match(s.node('station-error').textContent,/ya existe/);
+});
+test('editar una estación conserva el guardado directo y permite abrir sus símbolos desde la lista',async()=>{
+  const s=screen();s.node('station-km').value='0,0';await s.submit();s.node('station-symbol-dialog').close();
+  const record=s.inventory.sheets[0].stations[0];await s.click({editStation:record.id});
+  s.node('station-observations').value='Un hueco';await s.submit();
+  assert.equal(s.node('station-symbol-dialog').open,false);assert.equal(s.inventory.sheets[0].stations[0].observations,'Un hueco');
+  await s.click({stationSymbols:record.id});assert.equal(s.node('station-symbol-dialog').open,true);
 });
 test('el renglón y el selector muestran todas las figuras existentes junto al siguiente símbolo',async()=>{
   const s=screen();s.node('station-km').value='2,870';await s.submit();const sheet=s.inventory.sheets[0],record=sheet.stations[0];

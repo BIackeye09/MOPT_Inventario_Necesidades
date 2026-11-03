@@ -1,7 +1,7 @@
 // Lápiz y borrador sobre una capa transparente; la plantilla queda debajo.
 import {SKETCH_FRAME,SKETCH_LIMITS,createSketch,sketchPoint,renderSketch,drawSketchStroke} from './sketch-model.js';
 import {sheetLabel} from './model.js';
-import {backObservationLines} from './back-observations.js';
+import {backObservationLines,restoreBackDate} from './back-observations.js';
 const $=id=>document.getElementById(id);
 export function setupSketch({getInventory,commit,notify,confirmAction}) {
   const canvas=$('sketch-canvas'),context=canvas.getContext('2d'),cursor=$('sketch-cursor'),viewport=$('sketch-viewport');
@@ -148,6 +148,7 @@ export function setupSketch({getInventory,commit,notify,confirmAction}) {
     $('sketch-sheet').textContent=sheetLabel(getInventory());
     $('sketch-screen-sheet').textContent=sheetLabel(getInventory());
     if($('back-observations').value!==(active.backObservations||''))$('back-observations').value=active.backObservations||'';
+    if($('back-date').value!==(active.backDate??''))$('back-date').value=active.backDate??'';
     observationStatus();
     if(next!==signature){signature=next;paint();}controls();
   }
@@ -183,5 +184,9 @@ export function setupSketch({getInventory,commit,notify,confirmAction}) {
   globalThis.addEventListener?.('resize',fitPaper);
   globalThis.addEventListener?.('pagehide',flush);
   $('back-observations').addEventListener('input',event=>{sheet().backObservations=event.target.value;commit();});
+  $('back-date').addEventListener('change',event=>{
+    try{sheet().backDate=restoreBackDate(event.target.value);commit();}
+    catch(error){notify(error.message);refresh();}
+  });
   refresh();return {refresh,activate:refresh};
 }

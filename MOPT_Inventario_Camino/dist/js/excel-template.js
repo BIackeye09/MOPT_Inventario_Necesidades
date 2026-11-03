@@ -4,7 +4,7 @@
 import {prepareExcelFormatting,excelPrintSetup} from './excel-format.js';
 import {stationExcelEntries} from './stations.js';
 import {prepareExcelDrawing} from './excel-drawing.js';
-import {backObservationLines} from './back-observations.js';
+import {backObservationLines,backDateLines} from './back-observations.js';
 const END = 0xfffffffe;
 const FREE = 0xffffffff;
 const view = bytes => new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -99,7 +99,8 @@ export function fillExcelTemplate(input, values, assets={}) {
   const pending = new Map(), texts = [], newBuckets = [], textIds = new Map();
   let addedReferences = 0;
   const entries=[...Object.entries(EXCEL_CELLS).map(([key,address])=>({address,value:values[key]})),...tableEntries,
-    ...backObservationLines(values.backObservations).map(line=>({sheet:1,address:line.address,value:line.text}))];
+    ...backObservationLines(values.backObservations).map(line=>({sheet:1,address:line.address,value:line.text})),
+    ...backDateLines(values.backDate).map(line=>({sheet:1,address:line.address,value:Number(line.text)}))];
   for (const {address,value,sheet=0} of entries) {
     if (value === '' || value === null || value === undefined) continue;
     const [row, col] = coordinates(address);

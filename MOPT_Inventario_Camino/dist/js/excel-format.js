@@ -2,6 +2,7 @@
 // Se conservan los dibujos OfficeArt, las medidas y las líneas visibles.
 // Referencias: Microsoft MS-XLS, registros Font, XF y Setup.
 import {TABLE_FONT} from './stations.js';
+import {BACK_DATE_FONT} from './back-observations.js';
 export const INPUT_FONT = Object.freeze({name:'Arial',points:14,colorIndex:8,weight:700});
 export const LENGTH_RANGE=Object.freeze({top:10,bottom:11,left:26,right:29}); // AA11:AD12.
 const u16=(b,p)=>new DataView(b.buffer,b.byteOffset,b.byteLength).getUint16(p,true);
@@ -22,7 +23,7 @@ const mergeAreas=[[
   ...Array.from({length:26},(_,i)=>[range(i+23,i+23,0,2),range(i+23,i+23,9,10),
     range(i+23,i+23,11,12),range(i+23,i+23,13,14),range(i+23,i+23,15,16),
     range(i+23,i+23,17,30)]).flat()
-],Array.from({length:8},(_,i)=>range(i+34,i+34,1,29))];
+],[...Array.from({length:8},(_,i)=>range(i+34,i+34,1,29)),range(43,43,27,28)]];
 const inside=(a,b)=>a.top>=b.top&&a.bottom<=b.bottom&&a.left>=b.left&&a.right<=b.right;
 const overlaps=(a,b)=>a.top<=b.bottom&&a.bottom>=b.top&&a.left<=b.right&&a.right>=b.left;
 const equal=(a,b)=>inside(a,b)&&inside(b,a);
@@ -58,6 +59,7 @@ export function prepareExcelFormatting(records,inputAddresses,tableEntries=[]) {
   set16(inputFont,4,INPUT_FONT.colorIndex);set16(inputFont,6,INPUT_FONT.weight);
   set16(inputFont,8,0);inputFont[10]=0;
   const tableFont=inputFont.slice();set16(tableFont,0,TABLE_FONT.points*20);set16(tableFont,6,TABLE_FONT.weight);
+  const dateFont=tableFont.slice();set16(dateFont,0,BACK_DATE_FONT.points*20);
   // BIFF8 reserva el índice de fuente 4: el quinto registro tiene índice 5.
   const fontIndex=fonts.length+(fonts.length>=4?1:0);
   // Los formatos con unidad conservan el valor numérico editable en Excel.
@@ -73,6 +75,7 @@ export function prepareExcelFormatting(records,inputAddresses,tableEntries=[]) {
     formats.push(b);return index;
   };
   const measureFormat=numberFormat('0.###" m"');
+  const datePartFormat=numberFormat('00'),yearFormat=numberFormat('0000');
   const tableFormats=new Map(tableEntries.filter(e=>e.format).map(e=>{
     const [,letters,row]=/^([A-Z]+)(\d+)$/.exec(e.address);
     const col=[...letters].reduce((n,c)=>26*n+c.charCodeAt(0)-64,0)-1;
@@ -179,6 +182,11 @@ export function prepareExcelFormatting(records,inputAddresses,tableEntries=[]) {
         set16(xf,0,fontIndex+1);set16(xf,2,0);xf[9]|=0x1c;xf[8]&=~0x10;
         xf[6]=(xf[6]&~0x7f)|0x11; // Arial 12 negro; izquierda y centro vertical, un renglón por celda.
       }
+      if(s===1&&cell.row===43&&cell.col>=26&&cell.col<=29) {
+        // Las casillas D M A conservan sus bordes y muestran el año completo.
+        set16(xf,0,fontIndex+2);set16(xf,2,cell.col===29?yearFormat:datePartFormat);xf[9]|=0x1c;xf[8]&=~0x10;
+        xf[6]=(xf[6]&~0x7f)|0x12; // Arial 10 negro del campo original, centrado y sin reducir para ajustar.
+      }
       const signature=hex(xf);
       if(!cache.has(signature)){
         // La copia no tiene un registro XFExt: su fuente y bordes son explícitos.
@@ -192,7 +200,7 @@ export function prepareExcelFormatting(records,inputAddresses,tableEntries=[]) {
   }
   return {
     lastFont:fonts.at(-1),lastStyle:styles.at(-1),lastFormat:oldFormats.at(-1),
-    fonts:[inputFont,tableFont],formats,styles:additions,
+    fonts:[inputFont,tableFont,dateFont],formats,styles:additions,
     cellStyle(sheet,row,col,old){return sheets[sheet]?.cells.get(key(row,col))?.formattedXf??old;},
     copiedCell(sheet,row,col){return sheets[sheet]?.copies.get(key(row,col));},
     movedFrom(sheet,row,col){return sheets[sheet]?.cleared.has(key(row,col))??false;},

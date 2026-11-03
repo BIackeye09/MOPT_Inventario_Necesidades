@@ -92,7 +92,8 @@ export function setupStations({getInventory,commit,notify,confirmAction,nextShee
       if(JSON.stringify(active.graphics)!==beforeGraphics)onGraphicsChange();
       const edited=Boolean(saveId);reset();commit({sheets:true});
       notify(`Estación ${formatStation(value.station)} ${edited?'actualizada':'agregada'}.`);
-      if($('station-symbols-after-save').checked)openSymbols(value.id);else $('station-km').focus();
+      // Cada estación nueva continúa directamente a sus símbolos, sin marcar opciones.
+      if(!edited)openSymbols(value.id);else $('station-km').focus();
     } catch(error) {$('station-error').textContent=error.message;$('station-error').hidden=false;}
     finally {saving=false;refresh();}
   });

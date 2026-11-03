@@ -1,6 +1,6 @@
 # Inventario de Necesidades del Camino · MOPT
 
-Aplicación DPA-301, versión 1.3.2 · 2 de noviembre de 2026.
+Aplicación DPA-301, versión 1.3.3 · 3 de noviembre de 2026.
 
 ## Iniciar
 
@@ -47,7 +47,7 @@ Los campos de una estación se guardan mientras escribís, aunque estén incompl
 
 ## Colocar símbolos desde Estaciones
 
-Cada estación guardada tiene un botón **Símbolos**. Elegí una de las 18 figuras por su nombre o en **Elegir por imagen**, seleccioná la ubicación y el lado, y tocá **Colocar símbolo**. Si marcás **Elegir símbolos al guardar la estación**, la ventana se abre al agregar o guardar ese registro. No es obligatorio colocar figuras.
+Al agregar una estación válida se abre automáticamente su pantalla de **Símbolos**. Elegí una de las 18 figuras por su nombre o en **Elegir por imagen**, seleccioná la ubicación y el lado, y tocá **Colocar símbolo**. Podés cerrar la pantalla si esa estación no requiere figuras. Los registros guardados tienen un fondo azul suave y un contorno más marcado en teléfono. Cada registro mantiene su botón **Símbolos** para volver a abrirlo; editar sus datos guarda los cambios sin abrir esa pantalla.
 
 | Ubicación | Lados disponibles | Espacio en la plantilla |
 | --- | --- | --- |
@@ -90,6 +90,8 @@ El croquis abre una hoja blanca que ocupa la ventana disponible de la app. Solo 
 
 **Llenar pantalla** conserva las proporciones originales y permite recorrer lo que queda fuera con Mover lienzo. **Ver hoja completa** ajusta el papel entero. Girar el teléfono mantiene el dibujo y el centro de trabajo. No se solicita pantalla completa al navegador para evitar su aviso sobre el papel.
 
+La **Fecha** del reverso toma inicialmente el día local del dispositivo en cada hoja. Podés cambiarla con el calendario; se conserva al reabrir el inventario, cambiar de hoja y guardar o abrir una copia editable. Excel y PDF la colocan en las tres casillas originales **D M A**, con el año completo, sin modificar la plantilla.
+
 Las observaciones generales se escriben fuera del lienzo y ocupan los ocho renglones originales del reverso, en Arial 12 negro. La app avisa si un texto no cabe, sin reducir la letra ni modificar la plantilla.
 
 ## Guardado y actualización
@@ -106,7 +108,7 @@ Los borradores anteriores se recuperan automáticamente. Se conserva el dibujo d
 
 Los enteros antiguos se recuperan con `,0`. Las estaciones repetidas que ya existían se señalan para corregirlas sin eliminar registros automáticamente.
 
-La caché de la PWA usa la versión **1.3.2**. Después de actualizar `dist/`, recargá con conexión o cerrá y volvé a abrir la app hasta ver esa versión al pie. Cambiar el navegador, dominio o puerto crea otro espacio de guardado; abrí una copia editable para trasladar el trabajo.
+La caché de la PWA usa la versión **1.3.3**. Después de actualizar `dist/`, recargá con conexión o cerrá y volvé a abrir la app hasta ver esa versión al pie. Cambiar el navegador, dominio o puerto crea otro espacio de guardado; abrí una copia editable para trasladar el trabajo.
 
 ## Revisar y descargar el inventario completo
 

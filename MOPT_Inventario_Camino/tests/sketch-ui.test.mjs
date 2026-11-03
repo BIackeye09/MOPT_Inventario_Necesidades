@@ -71,6 +71,15 @@ test('el lienzo ocupa su pantalla y vuelve conservando el trazo en curso sin mez
   s.inventory.activeSheetId=s.inventory.sheets[0].id;s.ui.refresh();assert.match(s.node('back-observations').value,/cunetas/);
   s.click('open-sketch');assert.equal(s.inventory.sheets[0].sketch.strokes.length,1);
 });
+test('cambiar la fecha con el calendario se guarda por hoja y no altera el dibujo',()=>{
+  const s=screen(),first=s.inventory.sheets[0],second=s.inventory.sheets[1];s.line();const strokes=structuredClone(first.sketch);
+  assert.equal(s.node('back-date').value,first.backDate);
+  s.node('back-date').events.change({target:{value:'2026-10-26'}});assert.equal(first.backDate,'2026-10-26');
+  s.inventory.activeSheetId=second.id;s.ui.refresh();assert.equal(s.node('back-date').value,second.backDate);
+  s.node('back-date').events.change({target:{value:'2026-10-30'}});assert.equal(second.backDate,'2026-10-30');
+  s.inventory.activeSheetId=first.id;s.ui.refresh();assert.equal(s.node('back-date').value,'2026-10-26');assert.equal(documentValues(s.inventory).backDate,'2026-10-26');
+  assert.deepEqual(first.sketch,strokes);s.node('back-date').events.change({target:{value:'2026-02-30'}});assert.equal(first.backDate,'2026-10-26');
+});
 test('girar la pantalla y ampliar ajusta el papel sin cambiar los puntos del croquis',()=>{
   const s=screen();s.line();const before=structuredClone(s.inventory.sheets[0].sketch);
   s.click('open-sketch');s.node('sketch-viewport').clientHeight=250;

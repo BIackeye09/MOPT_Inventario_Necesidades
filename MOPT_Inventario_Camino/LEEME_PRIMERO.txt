@@ -1,5 +1,5 @@
 INVENTARIO DE NECESIDADES DEL CAMINO · MOPT
-Versión 1.3.2 · 02/11/2026
+Versión 1.3.3 · 03/11/2026
 
 PARA INICIAR
 1. Descomprimí toda la carpeta.
@@ -10,6 +10,8 @@ También podés usar Live Server sobre dist/index.html. La instalación como
 app requiere HTTPS o localhost. El puerto 8081 evita el conflicto con el reporte.
 
 VERSIÓN FINAL
+- La fecha del reverso toma la del dispositivo y se puede cambiar con un
+  calendario. Se guarda por hoja y aparece en las casillas D M A originales.
 - Nuevo inventario usa un botón rojo con letras blancas, en el encabezado
   y en Mis inventarios, tanto en teléfono como en computadora.
 - En teléfono, las letras son más grandes y oscuras: etiquetas azul marino,
@@ -34,7 +36,9 @@ VERSIÓN FINAL
 - Los símbolos vinculados se trasladan al cambiar el orden de estaciones.
   Eliminar la estación también quita sus figuras vinculadas; las libres
   se conservan. Ubicación permite volver a aplicar el ajuste automático.
-- Elegir símbolos al guardar la estación abre esa ventana al guardar.
+- Agregar una estación abre automáticamente sus símbolos, sin marcar opciones.
+  Podés cerrar la ventana si no necesitás figuras. Los registros guardados
+  se distinguen por su fondo azul y su contorno en teléfono.
 - Estaciones muestra el dibujo de cada renglón y todos sus símbolos por nombre.
   La ventana de colocación muestra también los ya colocados, incluidos dibujos
   libres que cruzan el renglón. Negro: colocado; atenuado: por colocar.
@@ -86,7 +90,7 @@ ACTUALIZAR TU WEB
 Reemplazá dist/ dentro de la carpeta publicable que ya usa tu hosting,
 conservando las rutas. No subás el ZIP como página web.
 Si tu repositorio tiene MOPT_Inventario_Camino/dist, reemplazá esa carpeta.
-Recargá con conexión hasta ver 1.3.2 al pie de la app.
+Recargá con conexión hasta ver 1.3.3 al pie de la app.
 El proyecto tiene 99 archivos y dist/ tiene 52. Ver SUBIR_A_GITHUB.md.
 
 EJEMPLOS

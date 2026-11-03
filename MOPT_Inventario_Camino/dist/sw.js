@@ -1,6 +1,7 @@
 // La caché solo guarda los recursos de esta aplicación, nunca otras páginas del sitio.
 // Los textos y botones de la interfaz móvil se actualizan junto a sus estilos.
-const CACHE = 'mopt-inventario-v1.3.2';
+// Fecha D M A del reverso, calendario y símbolos automáticos se actualizan juntos.
+const CACHE = 'mopt-inventario-v1.3.3';
 const ASSETS = [
   "./",
   "./index.html",

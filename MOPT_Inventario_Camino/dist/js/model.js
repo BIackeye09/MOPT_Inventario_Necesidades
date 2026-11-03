@@ -2,7 +2,7 @@
 import {restoreStations,sortStations,restoreStationDraft} from './stations.js';
 import {restoreGraphics,createGraphics,reflowStationSymbols} from './graphics-model.js';
 import {restoreSketch,createSketch} from './sketch-model.js';
-import {restoreBackObservations} from './back-observations.js';
+import {restoreBackObservations,restoreBackDate,deviceDate} from './back-observations.js';
 import {createId as id} from './ids.js';
 export const APP_VERSION = 1;
 export const STORAGE_KEY = 'mopt.inventario-camino.v1';
@@ -17,7 +17,7 @@ const clean = (v, max = 1000) => String(v ?? '').trim().slice(0, max);
 export function createInventory() {
   const sheetId = id();
   return { schemaVersion: APP_VERSION, id: id(), number: '', macroRegion: 'V',
-    surface: '', road: null, sheets: [{ id: sheetId, stations: [], stationDraft:null, graphics:createGraphics(),sketch:createSketch(),backObservations:'' }], activeSheetId: sheetId,
+    surface: '', road: null, sheets: [{ id: sheetId, stations: [], stationDraft:null, graphics:createGraphics(),sketch:createSketch(),backObservations:'',backDate:deviceDate() }], activeSheetId: sheetId,
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
 }
 
@@ -41,7 +41,7 @@ export function sheetLabel(inventory, sheetId = inventory.activeSheetId) {
 
 export function addSheet(inventory) {
   // El encabezado es común. Agregar una hoja conserva la hoja que se estaba usando.
-  return { ...inventory, sheets: [...inventory.sheets, { id: id(), stations: [], stationDraft:null, graphics:createGraphics(),sketch:createSketch(),backObservations:'' }] };
+  return { ...inventory, sheets: [...inventory.sheets, { id: id(), stations: [], stationDraft:null, graphics:createGraphics(),sketch:createSketch(),backObservations:'',backDate:deviceDate() }] };
 }
 
 export function removeSheet(inventory, sheetId) {
@@ -113,7 +113,7 @@ export function fromBackup(raw, catalog) {
   const sheets = input.sheets.map(s => {
     const stations=restoreStations(s?.stations);
     // La lectura conserva el dibujo libre y adapta los borradores antiguos.
-    const sheet={id:clean(s?.id,120),stations:sortStations(stations),stationDraft:restoreStationDraft(s?.stationDraft,stations),graphics:restoreGraphics(s?.graphics,stations),sketch:restoreSketch(s?.sketch),backObservations:restoreBackObservations(s?.backObservations)};
+    const sheet={id:clean(s?.id,120),stations:sortStations(stations),stationDraft:restoreStationDraft(s?.stationDraft,stations),graphics:restoreGraphics(s?.graphics,stations),sketch:restoreSketch(s?.sketch),backObservations:restoreBackObservations(s?.backObservations),backDate:restoreBackDate(s?.backDate)};
     reflowStationSymbols(sheet,stations);
     return sheet;
   });

@@ -1,14 +1,57 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {spawnSync} from 'node:child_process';
 import {createInventory,addSheet,toBackup,fromBackup} from '../dist/js/model.js';
-import {backObservationLines,BACK_OBSERVATIONS_FRAME} from '../dist/js/back-observations.js';
+import {backObservationLines,BACK_OBSERVATIONS_FRAME,deviceDate,restoreBackDate,backDateLines} from '../dist/js/back-observations.js';
 import {documentValues,makeExcel,makePdf} from '../dist/js/documents.js';
 import {readContainer,readRecords} from '../dist/js/excel-template.js';
 import {PDFDocument,StandardFonts} from '../dist/vendor/pdf-lib.esm.min.js';
 const catalog=JSON.parse(await readFile(new URL('../dist/data/caminos.json',import.meta.url),'utf8'));
 const xls=await readFile(new URL('../dist/templates/DPA-301-original.xls',import.meta.url));
 const pdf=await readFile(new URL('../dist/templates/DPA-301-original.pdf',import.meta.url));
+test('la fecha inicial usa el día local del dispositivo incluso cuando UTC ya cambió de día',()=>{
+  const moduleUrl=new URL('../dist/js/back-observations.js',import.meta.url).href;
+  const script=`import {deviceDate} from ${JSON.stringify(moduleUrl)};console.log(deviceDate(new Date('2026-11-03T00:30:00Z')));`;
+  const child=spawnSync(process.execPath,['--input-type=module','-e',script],{env:{...process.env,TZ:'America/Costa_Rica'},encoding:'utf8'});
+  assert.equal(child.status,0,child.stderr);assert.equal(child.stdout.trim(),'2026-11-02');
+  assert.equal(createInventory().sheets[0].backDate,deviceDate());
+});
+test('cada hoja conserva su fecha editable y los inventarios anteriores reciben la fecha del dispositivo',()=>{
+  const inv=createInventory();inv.sheets[0].backDate='2026-10-26';const multiple=addSheet(inv);
+  assert.equal(multiple.sheets[1].backDate,deviceDate());multiple.sheets[1].backDate='2026-10-30';
+  const restored=fromBackup(toBackup(multiple),catalog);assert.equal(documentValues(restored).backDate,'2026-10-26');
+  restored.activeSheetId=restored.sheets[1].id;assert.equal(documentValues(restored).backDate,'2026-10-30');
+  const old=JSON.parse(toBackup(multiple));delete old.inventory.sheets[0].backDate;
+  assert.equal(fromBackup(old,catalog).sheets[0].backDate,deviceDate());
+  old.inventory.sheets[0].backDate='';assert.equal(fromBackup(old,catalog).sheets[0].backDate,'');
+  old.inventory.sheets[0].backDate='2026-02-30';assert.throws(()=>fromBackup(old,catalog),/fecha del reverso/);
+});
+test('el calendario conserva fechas reales y los tres componentes caben en las casillas originales',async()=>{
+  for(const value of ['2024-02-29','2000-02-29','2026-11-03','0001-01-01','9999-12-31',''])assert.equal(restoreBackDate(value),value);
+  for(const value of ['2026-02-29','1900-02-29','2100-02-29','2026-04-31','2026-13-01','0000-01-01','03/11/2026',null,123])assert.throws(()=>restoreBackDate(value),/fecha/);
+  assert.deepEqual(backDateLines(''),[]);
+  const font=await (await PDFDocument.create()).embedFont(StandardFonts.Helvetica),lines=backDateLines('2026-11-03');
+  assert.deepEqual(lines.map(line=>[line.address,line.text]),[['AA44','03'],['AB44','11'],['AD44','2026']]);
+  for(const line of lines){assert.equal(line.size,10*.5925);assert.ok(line.x>line.left);assert.ok(line.x+font.widthOfTextAtSize(line.text,line.size)<line.right);assert.ok(line.top>727.93&&line.top<743.316);}
+});
+test('Excel guarda día mes y año completos como números centrados en el reverso y conserva la plantilla',async()=>{
+  const inv=createInventory();inv.sheets[0].backDate='2026-11-03';
+  const values=documentValues(inv),records=readRecords(readContainer(makeExcel(xls,values)).workbook);
+  const fonts=records.filter(r=>r.type===0x31).map(r=>Buffer.from(r.data)),styles=records.filter(r=>r.type===0xe0).map(r=>Buffer.from(r.data));
+  const formats=new Map(records.filter(r=>r.type===0x41e).map(r=>{const b=Buffer.from(r.data);return [b.readUInt16LE(0),b.subarray(5).toString('utf16le')];}));
+  let sheet=-1;const found=[];
+  for(const r of records){const b=Buffer.from(r.data);if(r.type===0x809&&b.readUInt16LE(2)===0x10)sheet++;
+    if(sheet!==1||r.type!==0x203||b.readUInt16LE(0)!==43||![26,27,29].includes(b.readUInt16LE(2)))continue;
+    const col=b.readUInt16LE(2),xf=styles[b.readUInt16LE(4)],index=xf.readUInt16LE(0),font=fonts[index>4?index-1:index];
+    found.push([col,b.readDoubleLE(6)]);assert.equal(font.readUInt16LE(0),200);assert.equal(font.readUInt16LE(4),8);assert.equal(font.readUInt16LE(6),400);
+    assert.equal(xf[6]&0x7f,0x12);assert.equal(xf[8]&0x10,0);assert.equal(formats.get(xf.readUInt16LE(2)),col===29?'0000':'00');
+  }
+  assert.deepEqual(found,[[26,3],[27,11],[29,2026]]);
+  const original=readRecords(readContainer(xls).workbook);
+  for(const type of [0x7d,0x208,0xec,0x5d,0x26,0x27,0x28,0x29])assert.deepEqual(records.filter(r=>r.type===type).map(r=>r.data),original.filter(r=>r.type===type).map(r=>r.data));
+  assert.equal((await PDFDocument.load(await makePdf(pdf,values))).getPageCount(),2);
+});
 test('cada hoja conserva sus observaciones del reverso y los borradores anteriores se recuperan vacíos',()=>{
   const inv=addSheet(createInventory());inv.sheets[0].backObservations='Limpieza de cunetas.\nInspección del tramo.';
   const recovered=fromBackup(toBackup(inv),catalog);assert.equal(documentValues(recovered).backObservationLines.length,2);
@@ -50,5 +93,6 @@ test('la interfaz elimina respaldos y lateral, deja Instalar junto a Vista previ
   assert.match(html,/<div class="document-actions"><button id="install-app"/);
   assert.match(html,/id="active-sheet"/);
   const dialog=html.slice(html.indexOf('<dialog id="sketch-dialog"'),html.indexOf('</dialog>',html.indexOf('<dialog id="sketch-dialog"')));
-  assert.ok(dialog.includes('id="sketch-canvas"'));assert.ok(!dialog.includes('id="back-observations"'));
+  assert.ok(dialog.includes('id="sketch-canvas"'));assert.ok(!dialog.includes('id="back-observations"'));assert.ok(!dialog.includes('id="back-date"'));
+  assert.match(html,/<input id="back-date" type="date"/);
 });
