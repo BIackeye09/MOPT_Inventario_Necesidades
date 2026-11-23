@@ -1,6 +1,8 @@
 # Inventario de Necesidades del Camino · MOPT
 
-Aplicación DPA-301, versión 1.3.3 · 3 de noviembre de 2026.
+Aplicación DPA-301, versión 1.3.4 · 23 de noviembre de 2026.
+
+El pie de la aplicación muestra el crédito fijo **Desarrollado por Santiago Granados Valerio**, sin campos ni ajustes para editarlo. Abrí la aplicación con conexión y aceptá la actualización cuando esté disponible para recibir esta versión; tus inventarios se conservan.
 
 ## Iniciar
 
