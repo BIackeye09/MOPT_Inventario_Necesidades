@@ -1,7 +1,7 @@
 // La caché solo guarda los recursos de esta aplicación, nunca otras páginas del sitio.
 // Los textos y botones de la interfaz móvil se actualizan junto a sus estilos.
 // Fecha D M A del reverso, calendario y símbolos automáticos se actualizan juntos.
-const CACHE = 'mopt-inventario-v1.3.4';
+const CACHE = 'mopt-inventario-v1.3.5';
 const ASSETS = [
   "./",
   "./index.html",
@@ -56,7 +56,8 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
+  const requests = ASSETS.map(path => new Request(path, { cache: 'no-cache' }));
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(requests)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('mopt-inventario-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
