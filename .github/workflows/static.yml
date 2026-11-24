@@ -28,6 +28,8 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      PAGES_ARTIFACT_NAME: github-pages-${{ github.run_attempt }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,8 +38,13 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-         path: 'MOPT_Inventario_Camino/dist' # Carpeta de la aplicación
+          name: ${{ env.PAGES_ARTIFACT_NAME }}
+          path: 'MOPT_Inventario_Camino/dist' # Carpeta de la aplicación
+      - name: Wait for artifact metadata
+        # Pages can query the artifact list before a new upload appears in it.
+        run: sleep 10
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}
